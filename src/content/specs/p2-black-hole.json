@@ -1,0 +1,350 @@
+{
+  "projectId": "p2-black-hole",
+  "sources": ["P2_BlackHole_RayTracer.md"],
+  "sections": [
+    {
+      "heading": "GOAL",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Make a picture of what a camera would see near a black hole, by following light backwards from every pixel and bending it with my RK4. Do one stage at a time. Ignore later stages until the current one is ticked."
+        }
+      ]
+    },
+    {
+      "heading": "THE IDEA IN PLAIN WORDS",
+      "items": [
+        {
+          "kind": "p",
+          "text": "A picture is a grid of pixels. For each pixel I ask: which direction does the light in this pixel come from? I follow that ray backwards, out of the camera and into space."
+        },
+        {
+          "kind": "li",
+          "text": "With no black hole, the ray goes straight and hits a star in the background."
+        },
+        {
+          "kind": "li",
+          "text": "With a black hole, the ray bends. Rays that pass close bend a lot, so the stars look stretched and warped."
+        },
+        {
+          "kind": "li",
+          "text": "Rays that pass too close never escape. Those pixels are black. The black circle is the shadow."
+        }
+      ]
+    },
+    {
+      "heading": "THE BIG SIMPLIFICATION",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Near a non-spinning black hole, a ray of light stays in one flat plane through the centre. So every ray is a 2D problem, solved with one equation, then placed back into 3D. Units: G = c = black hole mass = 1. Distances are counted in multiples of the mass."
+        },
+        {
+          "kind": "p",
+          "text": "d²u/dφ² = −u + 3u²"
+        },
+        {
+          "kind": "p",
+          "text": "u = 1/r, where r is the distance from the black hole. φ is how far the ray has swept around the black hole in its plane. It has the same shape as my spring (x'' = −x). The only new part is 3u², and it bends the light. So my step_RK4 almost transfers: the \"position\" is u, the \"velocity\" is du/dφ, and only the acceleration changes."
+        }
+      ]
+    },
+    {
+      "heading": "KEY NUMBERS",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Event horizon: r = 2 (u = 0.5). Nothing returns from inside."
+        },
+        {
+          "kind": "li",
+          "text": "Photon sphere: r = 3. Light can orbit here."
+        },
+        {
+          "kind": "li",
+          "text": "Shadow edge: b = 3 × √3 ≈ 5.196. Rays with b below this fall in."
+        },
+        {
+          "kind": "li",
+          "text": "Weak bend: about 4 ÷ b radians, for rays that stay far away."
+        },
+        {
+          "kind": "p",
+          "text": "b is the impact parameter: how close the ray would pass to the centre if it were not bent."
+        }
+      ]
+    },
+    {
+      "heading": "HAND-CHECKS (on paper, before any code)",
+      "items": [
+        {
+          "kind": "li",
+          "n": 1,
+          "text": "Flat space. Without the 3u² term, u = sin(φ) ÷ b. A ray that starts far away (u = 0) with du/dφ = 1 ÷ b returns to u = 0 at φ = π. The bend is exactly 0."
+        },
+        {
+          "kind": "li",
+          "n": 2,
+          "text": "Weak bend. With b = 100, the bend is about 4 ÷ 100 = 0.04 radians (2.3°). My own run gives 0.0414."
+        },
+        {
+          "kind": "li",
+          "n": 3,
+          "text": "Camera ray, flat space. A camera at r = 50 sees a pixel at angle α = 30° from the direction of the black hole. The ray escapes at φ = 180° − 30° = 150°. Also b = 50 × sin 30° = 25, and the ray's starting du/dφ is cot(30°) ÷ 50 = 0.0346."
+        },
+        {
+          "kind": "li",
+          "n": 4,
+          "text": "Disk crossing, flat space. A camera straight above the disk at r = 50, with a pixel at α = 10°, hits the disk plane at distance 50 × tan 10° = 8.82 from the centre."
+        }
+      ]
+    },
+    {
+      "heading": "HOW A RAY STARTS AND WHERE IT STOPS",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Ray that starts far away: u = 0 and du/dφ = 1 ÷ b. It stops when u returns to 0 (escaped, bend = φ − π) or when u reaches 0.5 (fell in)."
+        },
+        {
+          "kind": "li",
+          "text": "Ray that starts at the camera (distance r_cam): (du/dφ)² = 1/b² − u²(1 − 2u), with the sign that sends the ray inward, and b = r_cam × sin α ÷ √(1 − 2/r_cam). That b formula is for a camera that sits still. If it is too much at first, put the camera far away and use b = r × sin α."
+        }
+      ]
+    },
+    {
+      "heading": "BUILD STAGES (tick a stage only when its \"Done when\" is true; commit after every tick)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Stage 1: Flat space first. Switch off the 3u² term and trace a ray with b = 10. Done when: u returns to 0 at φ = π (within 0.001), and the path drawn in x, y (x = cos φ ÷ u, y = sin φ ÷ u) is a straight line 10 from the centre."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 2: Switch the bend on. Use a step of about 0.001 in φ. Done when: b = 100 gives a bend of about 0.041, b = 5.0 falls in, and b = 5.3 escapes after bending by more than 3 radians."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 3: Draw a fan of rays. 30 rays with different b in one 2D picture, plus circles at r = 2 and r = 3. Done when: rays near b = 5.2 loop around and rays below 5.19 fall in. This is my first README picture."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 4: Measure the shadow. Search between b = 5 and b = 5.4, halving the gap each time, to find where rays stop escaping. Done when: I find 5.196 within 0.01."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 5: Add a camera. Put it at r = 50 and turn each pixel into an angle α from the direction of the black hole. Trace each ray from the camera, then turn the escape angle into a direction in 3D. Done when: with the bend switched off, α = 30° gives an escape angle of 150°, as in hand-check 3."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 6: Make a small image. 100 × 100 pixels, with a checkerboard painted on the sky so the warping is easy to see. Done when: flat space shows an undistorted checkerboard, and the bend shows a distorted one with a black disc in the middle whose half-angle is about 5.8°."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 7: Make it fast. Because the black hole is a perfect sphere, the escape angle depends only on α. Trace about 2,000 rays across all α once, store the answers in a table, then let every pixel look up its answer with NumPy interpolation. Done when: an 800 × 600 image takes seconds, not minutes, and looks the same as Stage 6."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 8: Add the glowing disk. A flat ring in the equator plane, from r = 3 to r = 10 (my choice). A ray's 3D position is r × (cos φ × direction 1 + sin φ × direction 2), where direction 1 points from the black hole to the camera and direction 2 is sideways, along the ray's plane. When the height above the disk plane changes sign between two steps, the ray crossed the disk. Done when: with the bend switched off and the camera above, I see a perfect ring, and hand-check 4 matches."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 9: Colour the disk. Hot white-yellow near the inside, red toward the outside. Tilt the camera so I look at the disk almost edge-on, to get the famous look with light bent over the top. Done when: the image shows the bent copy of the disk over and under the shadow."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 10: Add stars. Random bright dots on the sky, or a free star-map image. The direction I computed turns into longitude and latitude to look up a colour. Done when: stars near the shadow are stretched into arcs."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 11: Animate. Move the camera around in 60 to 120 steps and save a picture each time. Join them into a video with ffmpeg. Done when: I have a 10 second loop."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 12: Write up. Hero image, the three checks (150°, 0.041, 5.196), and an honest list of what is simplified. Done when: a friend can run it from my README alone."
+        }
+      ]
+    },
+    {
+      "heading": "TRAPS (warn me when we reach each one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Degrees and radians. Python's maths uses radians. Mixing them is the most common reason pictures look wrong."
+        },
+        {
+          "kind": "li",
+          "text": "Steps too big near b = 5.2. Rays there wind around the black hole. Halve the step and check the bend does not change."
+        },
+        {
+          "kind": "li",
+          "text": "Rays that never finish. Put a maximum number of steps on every ray, and treat a ray that never finishes as black."
+        },
+        {
+          "kind": "li",
+          "text": "Angle wrap-around. Use atan2 when turning x and y into an angle, so I get the right quarter of the circle."
+        }
+      ]
+    },
+    {
+      "heading": "WATCH FIRST (videos)",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Search YouTube for: \"Sebastian Lague coding adventure black holes\", \"how Interstellar's black hole was made\", \"Schwarzschild black hole shadow explained\"."
+        }
+      ]
+    },
+    {
+      "heading": "FINISH CHECKLIST",
+      "items": [
+        {
+          "kind": "li",
+          "text": "The fan-of-rays picture and the lensed starfield in the README"
+        },
+        {
+          "kind": "li",
+          "text": "The shadow measurement: my number next to 5.196"
+        },
+        {
+          "kind": "li",
+          "text": "The rendering time before and after the lookup table"
+        },
+        {
+          "kind": "li",
+          "text": "A line saying what is simplified: the black hole does not spin, and the disk brightness is artistic, not exact physics"
+        },
+        {
+          "kind": "li",
+          "text": "Repo pinned on my GitHub profile"
+        }
+      ]
+    },
+    {
+      "heading": "PROFESSIONAL WORKFLOW (strict, from day one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "I use Windows and Git Bash."
+        },
+        {
+          "kind": "li",
+          "text": "One GitHub repo. Never commit straight to main. For each stage: create a branch (feature/stage-2-bend-on), commit small and often, push, open a pull request with a short description and a screenshot of the result, review it with me, then merge. Tick the stage in the README checklist inside that PR."
+        },
+        {
+          "kind": "li",
+          "text": "Commit messages: Conventional Commits (feat:, fix:, docs:, test:, refactor:, chore:), short and in present tense."
+        },
+        {
+          "kind": "li",
+          "text": "One code style for the whole project: Ruff (lint + format) set up in Stage 1, PEP 8, 4 spaces, type hints on every function, snake_case for variables and functions, UPPER_SNAKE_CASE for constants, a virtual environment, and requirements.txt."
+        },
+        {
+          "kind": "li",
+          "text": "Comments: a short docstring on every function (what it does, inputs with units, output). Above each physics step, a one-line comment naming the formula. Explain WHY, not what."
+        },
+        {
+          "kind": "li",
+          "text": "Tests: pytest. Each hand-check becomes a test (flat space returns to u = 0 at φ = π, bend at b = 100 is about 0.041, shadow is 5.196 within 0.01, and so on). A stage is only ticked when its test passes."
+        },
+        {
+          "kind": "li",
+          "text": "Folder structure: src/blackhole/ (rk4.py, ray.py, camera.py, render.py), tests/, docs/ (pictures, hand-checks), scripts/, README.md, .gitignore, pyproject.toml, requirements.txt."
+        },
+        {
+          "kind": "li",
+          "text": "Keep units clean. G = c = M = 1 in all code. Radians inside the code. Convert to degrees only for display."
+        }
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "1",
+      "title": "Flat space first",
+      "body": "Switch off the 3u² term and trace a ray with b = 10.",
+      "doneWhen": "u returns to 0 at φ = π (within 0.001), and the path drawn in x, y (x = cos φ ÷ u, y = sin φ ÷ u) is a straight line 10 from the centre."
+    },
+    {
+      "id": "2",
+      "title": "Switch the bend on",
+      "body": "Use a step of about 0.001 in φ.",
+      "doneWhen": "b = 100 gives a bend of about 0.041, b = 5.0 falls in, and b = 5.3 escapes after bending by more than 3 radians."
+    },
+    {
+      "id": "3",
+      "title": "Draw a fan of rays",
+      "body": "30 rays with different b in one 2D picture, plus circles at r = 2 and r = 3.",
+      "doneWhen": "rays near b = 5.2 loop around and rays below 5.19 fall in. This is my first README picture."
+    },
+    {
+      "id": "4",
+      "title": "Measure the shadow",
+      "body": "Search between b = 5 and b = 5.4, halving the gap each time, to find where rays stop escaping.",
+      "doneWhen": "I find 5.196 within 0.01."
+    },
+    {
+      "id": "5",
+      "title": "Add a camera",
+      "body": "Put it at r = 50 and turn each pixel into an angle α from the direction of the black hole. Trace each ray from the camera, then turn the escape angle into a direction in 3D.",
+      "doneWhen": "with the bend switched off, α = 30° gives an escape angle of 150°, as in hand-check 3."
+    },
+    {
+      "id": "6",
+      "title": "Make a small image",
+      "body": "100 × 100 pixels, with a checkerboard painted on the sky so the warping is easy to see.",
+      "doneWhen": "flat space shows an undistorted checkerboard, and the bend shows a distorted one with a black disc in the middle whose half-angle is about 5.8°."
+    },
+    {
+      "id": "7",
+      "title": "Make it fast",
+      "body": "Because the black hole is a perfect sphere, the escape angle depends only on α. Trace about 2,000 rays across all α once, store the answers in a table, then let every pixel look up its answer with NumPy interpolation.",
+      "doneWhen": "an 800 × 600 image takes seconds, not minutes, and looks the same as Stage 6."
+    },
+    {
+      "id": "8",
+      "title": "Add the glowing disk",
+      "body": "A flat ring in the equator plane, from r = 3 to r = 10 (my choice). A ray's 3D position is r × (cos φ × direction 1 + sin φ × direction 2), where direction 1 points from the black hole to the camera and direction 2 is sideways, along the ray's plane. When the height above the disk plane changes sign between two steps, the ray crossed the disk.",
+      "doneWhen": "with the bend switched off and the camera above, I see a perfect ring, and hand-check 4 matches."
+    },
+    {
+      "id": "9",
+      "title": "Colour the disk",
+      "body": "Hot white-yellow near the inside, red toward the outside. Tilt the camera so I look at the disk almost edge-on, to get the famous look with light bent over the top.",
+      "doneWhen": "the image shows the bent copy of the disk over and under the shadow."
+    },
+    {
+      "id": "10",
+      "title": "Add stars",
+      "body": "Random bright dots on the sky, or a free star-map image. The direction I computed turns into longitude and latitude to look up a colour.",
+      "doneWhen": "stars near the shadow are stretched into arcs."
+    },
+    {
+      "id": "11",
+      "title": "Animate",
+      "body": "Move the camera around in 60 to 120 steps and save a picture each time. Join them into a video with ffmpeg.",
+      "doneWhen": "I have a 10 second loop."
+    },
+    {
+      "id": "12",
+      "title": "Write up",
+      "body": "Hero image, the three checks (150°, 0.041, 5.196), and an honest list of what is simplified.",
+      "doneWhen": "a friend can run it from my README alone."
+    }
+  ],
+  "speech": {
+    "overview": "Make a picture of what a camera would see near a black hole, by following light backwards from every pixel and bending it with my RK4. Do one stage at a time. Ignore later stages until the current one is ticked. A picture is a grid of pixels. For each pixel I ask: which direction does the light in this pixel come from? I follow that ray backwards, out of the camera and into space. With no black hole, the ray goes straight and hits a star in the background. With a black hole, the ray bends. Rays that pass close bend a lot, so the stars look stretched and warped. Rays that pass too close never escape. Those pixels are black. The black circle is the shadow.",
+    "stage.1": "Stage 1: Flat space first. Switch off the 3u² term and trace a ray with b = 10. Done when: u returns to 0 at φ = π (within 0.001), and the path drawn in x, y (x = cos φ ÷ u, y = sin φ ÷ u) is a straight line 10 from the centre.",
+    "stage.2": "Stage 2: Switch the bend on. Use a step of about 0.001 in φ. Done when: b = 100 gives a bend of about 0.041, b = 5.0 falls in, and b = 5.3 escapes after bending by more than 3 radians.",
+    "stage.3": "Stage 3: Draw a fan of rays. 30 rays with different b in one 2D picture, plus circles at r = 2 and r = 3. Done when: rays near b = 5.2 loop around and rays below 5.19 fall in. This is my first README picture.",
+    "stage.4": "Stage 4: Measure the shadow. Search between b = 5 and b = 5.4, halving the gap each time, to find where rays stop escaping. Done when: I find 5.196 within 0.01.",
+    "stage.5": "Stage 5: Add a camera. Put it at r = 50 and turn each pixel into an angle α from the direction of the black hole. Trace each ray from the camera, then turn the escape angle into a direction in 3D. Done when: with the bend switched off, α = 30° gives an escape angle of 150°, as in hand-check 3.",
+    "stage.6": "Stage 6: Make a small image. 100 × 100 pixels, with a checkerboard painted on the sky so the warping is easy to see. Done when: flat space shows an undistorted checkerboard, and the bend shows a distorted one with a black disc in the middle whose half-angle is about 5.8°.",
+    "stage.7": "Stage 7: Make it fast. Because the black hole is a perfect sphere, the escape angle depends only on α. Trace about 2,000 rays across all α once, store the answers in a table, then let every pixel look up its answer with NumPy interpolation. Done when: an 800 × 600 image takes seconds, not minutes, and looks the same as Stage 6.",
+    "stage.8": "Stage 8: Add the glowing disk. A flat ring in the equator plane, from r = 3 to r = 10 (my choice). A ray's 3D position is r × (cos φ × direction 1 + sin φ × direction 2), where direction 1 points from the black hole to the camera and direction 2 is sideways, along the ray's plane. When the height above the disk plane changes sign between two steps, the ray crossed the disk. Done when: with the bend switched off and the camera above, I see a perfect ring, and hand-check 4 matches.",
+    "stage.9": "Stage 9: Colour the disk. Hot white-yellow near the inside, red toward the outside. Tilt the camera so I look at the disk almost edge-on, to get the famous look with light bent over the top. Done when: the image shows the bent copy of the disk over and under the shadow.",
+    "stage.10": "Stage 10: Add stars. Random bright dots on the sky, or a free star-map image. The direction I computed turns into longitude and latitude to look up a colour. Done when: stars near the shadow are stretched into arcs.",
+    "stage.11": "Stage 11: Animate. Move the camera around in 60 to 120 steps and save a picture each time. Join them into a video with ffmpeg. Done when: I have a 10 second loop.",
+    "stage.12": "Stage 12: Write up. Hero image, the three checks (150°, 0.041, 5.196), and an honest list of what is simplified. Done when: a friend can run it from my README alone."
+  }
+}

@@ -1,0 +1,407 @@
+{
+  "projectId": "p6-fluid-cpp",
+  "sources": ["P6_3D_Fluid_Simulator_CPP.md"],
+  "sections": [
+    {
+      "heading": "GOAL",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Build a fluid simulator that makes smoke swirl and rise in 3D, with obstacles, and render it as a video. I first learn the idea in 2D in Python (fast to try), then rebuild it in C++ for speed, then extend it to 3D and use all the CPU cores. A 3D fluid is the most impressive picture in this whole plan, and it teaches me C++, performance and the Navier-Stokes equations. Do one stage at a time. Ignore later stages until the current one is ticked."
+        }
+      ]
+    },
+    {
+      "heading": "THE IDEA IN PLAIN WORDS",
+      "items": [
+        {
+          "kind": "p",
+          "text": "A fluid is a grid of cells. Each cell holds a velocity (which way the fluid moves) and a density (how much smoke is there). One time step has four small jobs:"
+        },
+        {
+          "kind": "li",
+          "n": 1,
+          "text": "Add forces (buoyancy makes hot smoke rise, gravity pulls)."
+        },
+        {
+          "kind": "li",
+          "n": 2,
+          "text": "Advect: move things along the flow. For each cell, I look backwards to where its fluid came from, and copy the value from there (semi-Lagrangian)."
+        },
+        {
+          "kind": "li",
+          "n": 3,
+          "text": "Diffuse: viscosity smooths the velocity a little (optional for smoke)."
+        },
+        {
+          "kind": "li",
+          "n": 4,
+          "text": "Project: water and air cannot be squeezed, so the flow must have zero divergence. I solve for a pressure and subtract its gradient. This step is the heart of the simulation, and the most expensive."
+        }
+      ]
+    },
+    {
+      "heading": "THE BIG SIMPLIFICATION",
+      "items": [
+        {
+          "kind": "p",
+          "text": "A \"stable fluids\" solver (Jos Stam, 1999) on a regular grid. Incompressible flow, constant viscosity, smoke is a density field carried by the flow, solid walls and boxes as obstacles. No free-surface water, no turbulence model, no adaptive grid."
+        }
+      ]
+    },
+    {
+      "heading": "KEY EQUATIONS",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Momentum: ∂u/∂t + (u · ∇)u = -(1/ρ) ∇p + ν ∇²u + f"
+        },
+        {
+          "kind": "li",
+          "text": "Incompressibility: ∇ · u = 0"
+        },
+        {
+          "kind": "li",
+          "text": "u is the velocity (m/s), p the pressure, ρ the density of the fluid, ν the viscosity, f the forces per mass."
+        },
+        {
+          "kind": "li",
+          "text": "Projection: solve ∇²p = (1/dt) ∇ · u*, then u = u* - dt ∇p. The Poisson equation ∇²p = b is solved with an iterative method (Jacobi, then Gauss-Seidel, then multigrid as a stretch goal)."
+        },
+        {
+          "kind": "li",
+          "text": "Stable time step: use semi-Lagrangian advection, so any dt is stable. Accuracy is best when dt × max speed < 1 cell."
+        }
+      ]
+    },
+    {
+      "heading": "HAND-CHECKS (on paper, before any code)",
+      "items": [
+        {
+          "kind": "li",
+          "n": 1,
+          "text": "Advection. A blob in a constant flow of 1 cell per second moves 10 cells in 10 seconds. Predict where it lands."
+        },
+        {
+          "kind": "li",
+          "n": 2,
+          "text": "Divergence by hand. For a tiny 3 × 3 grid with chosen velocities, compute ∇ · u with central differences. Then check that adding a pressure gradient can bring it to zero."
+        },
+        {
+          "kind": "li",
+          "n": 3,
+          "text": "Decay of a vortex. In 2D, with u = cos(x) sin(y) e^(-2νt) and v = -sin(x) cos(y) e^(-2νt) (the Taylor-Green vortex), the total kinetic energy falls as e^(-4νt). With ν = 0.01 and t = 10, the energy is 0.670 of the start."
+        },
+        {
+          "kind": "li",
+          "n": 4,
+          "text": "The Poisson size. A 64³ grid has 262,144 cells. How many numbers must I update per iteration? How many iterations do I want per time step (20 to 60)?"
+        },
+        {
+          "kind": "li",
+          "n": 5,
+          "text": "Memory. 64³ cells × 4 bytes × 4 fields (3 velocity components + density) = about 4 MB. How big is 256³?"
+        }
+      ]
+    },
+    {
+      "heading": "BUILD STAGES (tick a stage only when its \"Done when\" is true; commit after every tick)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Stage 1: Python warm-up, 2D. Write the whole 2D smoke solver in NumPy on a 128 × 128 grid. Draw the density as an animation. Done when: I see smoke swirling, and it takes seconds per frame. This is my reference, and my speed baseline."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 2: Python checks. Test advection (hand-check 1), the divergence after projection (below 1e-4), and the Taylor-Green decay (hand-check 3, within 2%). Done when: three tests pass in pytest."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 3: C++ from zero. Install a compiler (g++ in MSYS2, or MSVC) and CMake. Write \"hello\", then a program that makes a 2D array, fills it with numbers, and writes a picture. Learn types, std::vector, loops, functions, references and headers. Done when: a C++ program writes a PGM or PNG image that I open and see."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 4: 2D advection in C++. A blob moves along a constant flow, drawn as a series of images. Done when: it matches hand-check 1 and matches my Python result."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 5: 2D projection in C++. Add the divergence, the Jacobi pressure solver and the pressure gradient. Done when: the divergence after projection is below 1e-4, as in Python."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 6: The full 2D solver in C++. Forces, advection, projection, smoke source, boundaries. Done when: the C++ output looks like my Python animation, and the Taylor-Green energy decay matches e^(-4νt) within 2%. Print the speed against Python (the speedup)."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 7: The lid-driven cavity. A closed box with a moving top lid at Reynolds number 100 (use ν = 0.01, box 1 × 1, lid speed 1). Done when: after it settles, the horizontal velocity along the vertical centreline reaches a minimum near -0.21 at a height near 0.45 (the published benchmark of Ghia et al., 1982). This proves the solver is physically right, not only pretty."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 8: Make it faster. Measure with a timer. Use the Gauss-Seidel red-black ordering, then OpenMP (#pragma omp parallel for) on the loops. Done when: I print a table of 1, 2, 4, and all cores, with the speedup for each."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 9: Extend to 3D. Change the grid to x, y, z. Velocity gets three components. The divergence, the pressure solve and the advection each get one more term. Start with 32³. Done when: the divergence after projection is below 1e-4 in 3D, and a blob moves correctly in a constant flow."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 10: 3D smoke. Add a hot smoke source at the bottom, buoyancy (f = α × density upward), and a few vorticity details if I want. Save the density as a file for every frame (VTK or raw binary). Done when: I open the files in ParaView (free) and see a plume rising and curling."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 11: Obstacles. Add a solid sphere or box inside the domain. The flow must go around it (velocity is zero at the solid, and the pressure solver respects it). Done when: the smoke wraps around the obstacle, and the divergence in fluid cells is still tiny."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 12: Scale up and measure. Run 64³ and 128³ with all cores. Done when: I have a table of grid size, time per step, and memory, and I understand why the pressure solve takes most of the time."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 13: A better pressure solver (stretch). Replace Jacobi with a multigrid or conjugate gradient solver. Done when: I get the same divergence with far fewer iterations, with a printed comparison."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 14: Make it beautiful. Render the smoke in 3D. Option A: ParaView volume rendering with a camera path. Option B: export a density grid to OpenVDB and render it in Blender, which I already know. Done when: I have a 15 to 30 second video of a smoke plume around an obstacle."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 15: Write up. Hero video, the three checks (advection, 0.670 energy, the cavity benchmark), the speedup table and an honest list of what is simplified. Done when: a friend can build and run it from my README alone."
+        }
+      ]
+    },
+    {
+      "heading": "TRAPS (warn me when we reach each one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Indexing. A 3D array stored in one long line needs the formula index = x + nx × (y + ny × z). One wrong order and the picture is a mess. Write one function for it, and test it."
+        },
+        {
+          "kind": "li",
+          "text": "Off-by-one at the boundary. Ghost cells or careful loops. Every boundary condition is a bug waiting to happen."
+        },
+        {
+          "kind": "li",
+          "text": "Advection backwards. The \"look backwards\" step uses minus the velocity. A wrong sign makes smoke move the wrong way or blow up."
+        },
+        {
+          "kind": "li",
+          "text": "Interpolation. A position that is between cells needs trilinear interpolation. Clamp it to the grid."
+        },
+        {
+          "kind": "li",
+          "text": "Numerical diffusion. Semi-Lagrangian smooths the smoke more than real life. This is a known weakness, not a bug."
+        },
+        {
+          "kind": "li",
+          "text": "Units. Keep dx, dt and velocity consistent. Say what a cell is in metres, even if it is 1."
+        },
+        {
+          "kind": "li",
+          "text": "Reading and writing the same array. In Jacobi, use two arrays (old and new). In-place updates give a different method."
+        },
+        {
+          "kind": "li",
+          "text": "Data races. In OpenMP, two threads must not write to the same cell. Red-black ordering and separate arrays avoid this."
+        },
+        {
+          "kind": "li",
+          "text": "Optimisation too early. First make it correct, then measure, then speed it up."
+        },
+        {
+          "kind": "li",
+          "text": "Compiler flags. Test with -O0 and -g, run the speed tests with -O2 or -O3."
+        }
+      ]
+    },
+    {
+      "heading": "WATCH FIRST (videos)",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Search YouTube for: \"Ten Minute Physics fluid simulation Matthias Müller\", \"Sebastian Lague coding adventure fluid simulation\", \"Jos Stam stable fluids explained\", \"C++ for Python programmers\", \"OpenMP tutorial Tim Mattson\"."
+        }
+      ]
+    },
+    {
+      "heading": "FINISH CHECKLIST",
+      "items": [
+        {
+          "kind": "li",
+          "text": "The hero video and the 3D smoke pictures in the README"
+        },
+        {
+          "kind": "li",
+          "text": "The three checks: advection, the 0.670 energy decay, the cavity benchmark"
+        },
+        {
+          "kind": "li",
+          "text": "The speedup table: Python, C++ one core, C++ all cores"
+        },
+        {
+          "kind": "li",
+          "text": "The grid-size table: 32³, 64³, 128³ with time and memory"
+        },
+        {
+          "kind": "li",
+          "text": "A line saying what is simplified: incompressible, no free surface, no turbulence model, regular grid"
+        },
+        {
+          "kind": "li",
+          "text": "Repo pinned on my GitHub profile"
+        }
+      ]
+    },
+    {
+      "heading": "PROFESSIONAL WORKFLOW (strict, from day one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "I use Windows and Git Bash."
+        },
+        {
+          "kind": "li",
+          "text": "One GitHub repo. Never commit straight to main. For each stage: create a branch (feature/stage-5-projection), commit small and often, push, open a pull request with a short description and a screenshot of the result, review it with me, then merge. Tick the stage in the README checklist inside that PR."
+        },
+        {
+          "kind": "li",
+          "text": "Commit messages: Conventional Commits (feat:, fix:, docs:, test:, refactor:, chore:), short and in present tense."
+        },
+        {
+          "kind": "li",
+          "text": "One code style: for Python, Ruff, type hints and PEP 8. For C++, C++17, clang-format, clear names (snake_case for variables and functions, PascalCase for classes, UPPER_SNAKE_CASE for constants), and no raw `new` and `delete` (use std::vector)."
+        },
+        {
+          "kind": "li",
+          "text": "Build system: CMake from the start, with a Release and a Debug build."
+        },
+        {
+          "kind": "li",
+          "text": "Comments: a short comment on every function (what it does, inputs with units, output). Above each physics step, a one-line comment naming the formula. Explain WHY, not what."
+        },
+        {
+          "kind": "li",
+          "text": "Tests: pytest for the Python reference, and a small C++ test program (Catch2 or doctest) for the C++ code. Each hand-check becomes a test. A stage is only ticked when its test passes."
+        },
+        {
+          "kind": "li",
+          "text": "Folder structure: python/ (reference solver and tests), cpp/ (src/, include/, tests/, CMakeLists.txt), docs/ (pictures, hand-checks, benchmarks), scripts/, README.md, .gitignore."
+        },
+        {
+          "kind": "li",
+          "text": "Keep units clean. SI units, or clearly say \"1 cell = 1 unit\"."
+        }
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "1",
+      "title": "Python warm-up, 2D",
+      "body": "Write the whole 2D smoke solver in NumPy on a 128 × 128 grid. Draw the density as an animation.",
+      "doneWhen": "I see smoke swirling, and it takes seconds per frame. This is my reference, and my speed baseline."
+    },
+    {
+      "id": "2",
+      "title": "Python checks",
+      "body": "Test advection (hand-check 1), the divergence after projection (below 1e-4), and the Taylor-Green decay (hand-check 3, within 2%).",
+      "doneWhen": "three tests pass in pytest."
+    },
+    {
+      "id": "3",
+      "title": "C++ from zero",
+      "body": "Install a compiler (g++ in MSYS2, or MSVC) and CMake. Write \"hello\", then a program that makes a 2D array, fills it with numbers, and writes a picture. Learn types, std::vector, loops, functions, references and headers.",
+      "doneWhen": "a C++ program writes a PGM or PNG image that I open and see."
+    },
+    {
+      "id": "4",
+      "title": "2D advection in C++",
+      "body": "A blob moves along a constant flow, drawn as a series of images.",
+      "doneWhen": "it matches hand-check 1 and matches my Python result."
+    },
+    {
+      "id": "5",
+      "title": "2D projection in C++",
+      "body": "Add the divergence, the Jacobi pressure solver and the pressure gradient.",
+      "doneWhen": "the divergence after projection is below 1e-4, as in Python."
+    },
+    {
+      "id": "6",
+      "title": "The full 2D solver in C++",
+      "body": "Forces, advection, projection, smoke source, boundaries.",
+      "doneWhen": "the C++ output looks like my Python animation, and the Taylor-Green energy decay matches e^(-4νt) within 2%. Print the speed against Python (the speedup)."
+    },
+    {
+      "id": "7",
+      "title": "The lid-driven cavity",
+      "body": "A closed box with a moving top lid at Reynolds number 100 (use ν = 0.01, box 1 × 1, lid speed 1).",
+      "doneWhen": "after it settles, the horizontal velocity along the vertical centreline reaches a minimum near -0.21 at a height near 0.45 (the published benchmark of Ghia et al., 1982). This proves the solver is physically right, not only pretty."
+    },
+    {
+      "id": "8",
+      "title": "Make it faster",
+      "body": "Measure with a timer. Use the Gauss-Seidel red-black ordering, then OpenMP (#pragma omp parallel for) on the loops.",
+      "doneWhen": "I print a table of 1, 2, 4, and all cores, with the speedup for each."
+    },
+    {
+      "id": "9",
+      "title": "Extend to 3D",
+      "body": "Change the grid to x, y, z. Velocity gets three components. The divergence, the pressure solve and the advection each get one more term. Start with 32³.",
+      "doneWhen": "the divergence after projection is below 1e-4 in 3D, and a blob moves correctly in a constant flow."
+    },
+    {
+      "id": "10",
+      "title": "3D smoke",
+      "body": "Add a hot smoke source at the bottom, buoyancy (f = α × density upward), and a few vorticity details if I want. Save the density as a file for every frame (VTK or raw binary).",
+      "doneWhen": "I open the files in ParaView (free) and see a plume rising and curling."
+    },
+    {
+      "id": "11",
+      "title": "Obstacles",
+      "body": "Add a solid sphere or box inside the domain. The flow must go around it (velocity is zero at the solid, and the pressure solver respects it).",
+      "doneWhen": "the smoke wraps around the obstacle, and the divergence in fluid cells is still tiny."
+    },
+    {
+      "id": "12",
+      "title": "Scale up and measure",
+      "body": "Run 64³ and 128³ with all cores.",
+      "doneWhen": "I have a table of grid size, time per step, and memory, and I understand why the pressure solve takes most of the time."
+    },
+    {
+      "id": "13",
+      "title": "A better pressure solver (stretch)",
+      "body": "Replace Jacobi with a multigrid or conjugate gradient solver.",
+      "doneWhen": "I get the same divergence with far fewer iterations, with a printed comparison."
+    },
+    {
+      "id": "14",
+      "title": "Make it beautiful",
+      "body": "Render the smoke in 3D. Option A: ParaView volume rendering with a camera path. Option B: export a density grid to OpenVDB and render it in Blender, which I already know.",
+      "doneWhen": "I have a 15 to 30 second video of a smoke plume around an obstacle."
+    },
+    {
+      "id": "15",
+      "title": "Write up",
+      "body": "Hero video, the three checks (advection, 0.670 energy, the cavity benchmark), the speedup table and an honest list of what is simplified.",
+      "doneWhen": "a friend can build and run it from my README alone."
+    }
+  ],
+  "speech": {
+    "overview": "Build a fluid simulator that makes smoke swirl and rise in 3D, with obstacles, and render it as a video. I first learn the idea in 2D in Python (fast to try), then rebuild it in C++ for speed, then extend it to 3D and use all the CPU cores. A 3D fluid is the most impressive picture in this whole plan, and it teaches me C++, performance and the Navier-Stokes equations. Do one stage at a time. Ignore later stages until the current one is ticked. A fluid is a grid of cells. Each cell holds a velocity (which way the fluid moves) and a density (how much smoke is there). One time step has four small jobs: Add forces (buoyancy makes hot smoke rise, gravity pulls). Advect: move things along the flow. For each cell, I look backwards to where its fluid came from, and copy the value from there (semi-Lagrangian). Diffuse: viscosity smooths the velocity a little (optional for smoke). Project: water and air cannot be squeezed, so the flow must have zero divergence. I solve for a pressure and subtract its gradient. This step is the heart of the simulation, and the most expensive.",
+    "stage.1": "Stage 1: Python warm-up, 2D. Write the whole 2D smoke solver in NumPy on a 128 × 128 grid. Draw the density as an animation. Done when: I see smoke swirling, and it takes seconds per frame. This is my reference, and my speed baseline.",
+    "stage.2": "Stage 2: Python checks. Test advection (hand-check 1), the divergence after projection (below 1e-4), and the Taylor-Green decay (hand-check 3, within 2%). Done when: three tests pass in pytest.",
+    "stage.3": "Stage 3: C++ from zero. Install a compiler (g++ in MSYS2, or MSVC) and CMake. Write \"hello\", then a program that makes a 2D array, fills it with numbers, and writes a picture. Learn types, std::vector, loops, functions, references and headers. Done when: a C++ program writes a PGM or PNG image that I open and see.",
+    "stage.4": "Stage 4: 2D advection in C++. A blob moves along a constant flow, drawn as a series of images. Done when: it matches hand-check 1 and matches my Python result.",
+    "stage.5": "Stage 5: 2D projection in C++. Add the divergence, the Jacobi pressure solver and the pressure gradient. Done when: the divergence after projection is below 1e-4, as in Python.",
+    "stage.6": "Stage 6: The full 2D solver in C++. Forces, advection, projection, smoke source, boundaries. Done when: the C++ output looks like my Python animation, and the Taylor-Green energy decay matches e^(-4νt) within 2%. Print the speed against Python (the speedup).",
+    "stage.7": "Stage 7: The lid-driven cavity. A closed box with a moving top lid at Reynolds number 100 (use ν = 0.01, box 1 × 1, lid speed 1). Done when: after it settles, the horizontal velocity along the vertical centreline reaches a minimum near -0.21 at a height near 0.45 (the published benchmark of Ghia et al., 1982). This proves the solver is physically right, not only pretty.",
+    "stage.8": "Stage 8: Make it faster. Measure with a timer. Use the Gauss-Seidel red-black ordering, then OpenMP (#pragma omp parallel for) on the loops. Done when: I print a table of 1, 2, 4, and all cores, with the speedup for each.",
+    "stage.9": "Stage 9: Extend to 3D. Change the grid to x, y, z. Velocity gets three components. The divergence, the pressure solve and the advection each get one more term. Start with 32³. Done when: the divergence after projection is below 1e-4 in 3D, and a blob moves correctly in a constant flow.",
+    "stage.10": "Stage 10: 3D smoke. Add a hot smoke source at the bottom, buoyancy (f = α × density upward), and a few vorticity details if I want. Save the density as a file for every frame (VTK or raw binary). Done when: I open the files in ParaView (free) and see a plume rising and curling.",
+    "stage.11": "Stage 11: Obstacles. Add a solid sphere or box inside the domain. The flow must go around it (velocity is zero at the solid, and the pressure solver respects it). Done when: the smoke wraps around the obstacle, and the divergence in fluid cells is still tiny.",
+    "stage.12": "Stage 12: Scale up and measure. Run 64³ and 128³ with all cores. Done when: I have a table of grid size, time per step, and memory, and I understand why the pressure solve takes most of the time.",
+    "stage.13": "Stage 13: A better pressure solver (stretch). Replace Jacobi with a multigrid or conjugate gradient solver. Done when: I get the same divergence with far fewer iterations, with a printed comparison.",
+    "stage.14": "Stage 14: Make it beautiful. Render the smoke in 3D. Option A: ParaView volume rendering with a camera path. Option B: export a density grid to OpenVDB and render it in Blender, which I already know. Done when: I have a 15 to 30 second video of a smoke plume around an obstacle.",
+    "stage.15": "Stage 15: Write up. Hero video, the three checks (advection, 0.670 energy, the cavity benchmark), the speedup table and an honest list of what is simplified. Done when: a friend can build and run it from my README alone."
+  }
+}

@@ -1,0 +1,1229 @@
+{
+  "projectId": "p5-em-field",
+  "sources": ["text/P5_EM_Field_Visualizer_Build_Guide.txt"],
+  "sections": [
+    {
+      "heading": "How to use this guide",
+      "items": [
+        {
+          "kind": "p",
+          "text": "This guide is a map, not a textbook. Each step gives you a goal, a task and a result to see"
+        },
+        {
+          "kind": "p",
+          "text": "on screen. You write the code."
+        },
+        {
+          "kind": "p",
+          "text": "1. Something moves on screen at every step. If nothing runs, the step is too big. Split it."
+        },
+        {
+          "kind": "p",
+          "text": "2. You type every line. Ask Claude for hints, never for finished code."
+        },
+        {
+          "kind": "p",
+          "text": "3. One step at a time. Finish, see the result, commit, then move on."
+        },
+        {
+          "kind": "p",
+          "text": "4. One branch and one PR per step. main always works."
+        },
+        {
+          "kind": "p",
+          "text": "Every step has the same five lines: Goal, You'll see, Just enough, Your task and Commit."
+        }
+      ]
+    },
+    {
+      "heading": "Git, PRs and code style",
+      "items": [
+        {
+          "kind": "p",
+          "text": "The loop below is the same for every step in this guide. Run the commands one line at a"
+        },
+        {
+          "kind": "p",
+          "text": "time in Git Bash."
+        },
+        {
+          "kind": "p",
+          "text": "git switch main"
+        },
+        {
+          "kind": "p",
+          "text": "git pull"
+        },
+        {
+          "kind": "p",
+          "text": "git switch -c feat/short-name"
+        },
+        {
+          "kind": "p",
+          "text": "# ...write code, run it, see the result..."
+        },
+        {
+          "kind": "p",
+          "text": "git status"
+        },
+        {
+          "kind": "p",
+          "text": "git add ."
+        },
+        {
+          "kind": "p",
+          "text": "git commit -m \"feat: what you added\""
+        },
+        {
+          "kind": "p",
+          "text": "git push -u origin feat/short-name"
+        },
+        {
+          "kind": "p",
+          "text": "# open PR on GitHub, read Files changed, merge, delete branch"
+        },
+        {
+          "kind": "p",
+          "text": "Prefix"
+        },
+        {
+          "kind": "p",
+          "text": "Use for"
+        },
+        {
+          "kind": "p",
+          "text": "Example"
+        },
+        {
+          "kind": "p",
+          "text": "feat:"
+        },
+        {
+          "kind": "p",
+          "text": "New visible feature"
+        },
+        {
+          "kind": "p",
+          "text": "feat: add point charge sphere"
+        },
+        {
+          "kind": "p",
+          "text": "fix:"
+        },
+        {
+          "kind": "p",
+          "text": "Bug fix"
+        },
+        {
+          "kind": "p",
+          "text": "fix: arrow points the wrong way"
+        },
+        {
+          "kind": "p",
+          "text": "chore:"
+        },
+        {
+          "kind": "p",
+          "text": "Setup, config, tooling"
+        },
+        {
+          "kind": "p",
+          "text": "chore: add gitignore"
+        },
+        {
+          "kind": "p",
+          "text": "docs:"
+        },
+        {
+          "kind": "p",
+          "text": "README, comments, docs"
+        },
+        {
+          "kind": "p",
+          "text": "docs: explain how to run the server"
+        },
+        {
+          "kind": "p",
+          "text": "refactor:"
+        },
+        {
+          "kind": "p",
+          "text": "Same behaviour, cleaner"
+        },
+        {
+          "kind": "p",
+          "text": "code"
+        },
+        {
+          "kind": "p",
+          "text": "refactor: move charge code to a"
+        },
+        {
+          "kind": "p",
+          "text": "function"
+        },
+        {
+          "kind": "p",
+          "text": "Branch names: type/short-kebab-name , for example feat/field-arrow . No spaces, no"
+        },
+        {
+          "kind": "p",
+          "text": "stray brackets."
+        },
+        {
+          "kind": "p",
+          "text": "PR description: one line on what changed, one line on how to test it. Always read Files"
+        },
+        {
+          "kind": "p",
+          "text": "changed before merging."
+        },
+        {
+          "kind": "p",
+          "text": "JavaScript style rules:"
+        },
+        {
+          "kind": "p",
+          "text": "const by default, let only when the value changes, never var ."
+        },
+        {
+          "kind": "p",
+          "text": "camelCase for variables and functions, PascalCase for classes, UPPER_SNAKE_CASE"
+        },
+        {
+          "kind": "p",
+          "text": "for constants."
+        },
+        {
+          "kind": "p",
+          "text": "Double quotes, ; at the end of every statement, 2 spaces of indentation."
+        },
+        {
+          "kind": "p",
+          "text": "No leftover console.log or commented-out code in a PR."
+        },
+        {
+          "kind": "p",
+          "text": "A comment explains why, not what. Add one wherever the maths isn't obvious."
+        },
+        {
+          "kind": "p",
+          "text": "Never commit .env , node_modules/ or secrets."
+        }
+      ]
+    },
+    {
+      "heading": "EM physics cheat sheet",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Only what the code needs. Read a part when a step points to it, not before."
+        },
+        {
+          "kind": "p",
+          "text": "Charge"
+        },
+        {
+          "kind": "p",
+          "text": "A point charge is a tiny object with a sign: positive (+) or negative (−). In code it is a"
+        },
+        {
+          "kind": "p",
+          "text": "number q and a position. Colors: red for + , blue for − ."
+        },
+        {
+          "kind": "p",
+          "text": "The field"
+        },
+        {
+          "kind": "p",
+          "text": "The electric field is an arrow at every point in space. It answers: which way would a tiny"
+        },
+        {
+          "kind": "p",
+          "text": "positive test charge be pushed here, and how hard?"
+        },
+        {
+          "kind": "p",
+          "text": "Near a + charge the arrows point away from it."
+        },
+        {
+          "kind": "p",
+          "text": "Near a − charge the arrows point toward it."
+        },
+        {
+          "kind": "p",
+          "text": "Strength"
+        },
+        {
+          "kind": "p",
+          "text": "Strength drops fast with distance. Double the distance and the field is 4 times weaker."
+        },
+        {
+          "kind": "p",
+          "text": "E = \\frac{k\\,q}{r^2}"
+        },
+        {
+          "kind": "p",
+          "text": "q is the charge, r is the distance from the charge to the point."
+        },
+        {
+          "kind": "p",
+          "text": "k is a constant. We set k = 1 , because we only want the pattern, not real units."
+        },
+        {
+          "kind": "p",
+          "text": "Direction"
+        },
+        {
+          "kind": "p",
+          "text": "In code, the direction is a unit vector from the charge to the point:"
+        },
+        {
+          "kind": "p",
+          "text": "\\hat{r} = \\frac{\\text{point} - \\text{charge position}}{r}"
+        },
+        {
+          "kind": "p",
+          "text": "The full field vector is E · r̂. For a negative q , the sign flips the arrow automatically."
+        },
+        {
+          "kind": "p",
+          "text": "Superposition"
+        },
+        {
+          "kind": "p",
+          "text": "With several charges, the field at a point is the sum of each charge's arrow, added as"
+        },
+        {
+          "kind": "p",
+          "text": "vectors. No new physics is needed, only a loop and total.add(...) ."
+        },
+        {
+          "kind": "p",
+          "text": "\\vec{E}_{\\text{total}} = \\vec{E}_1 + \\vec{E}_2 + \\dots"
+        },
+        {
+          "kind": "p",
+          "text": "Field lines"
+        },
+        {
+          "kind": "p",
+          "text": "A field line is the path a tiny positive charge would follow. Where lines are dense, the field"
+        },
+        {
+          "kind": "p",
+          "text": "is strong. Lines start on + charges and end on − charges."
+        },
+        {
+          "kind": "p",
+          "text": "Watch out"
+        },
+        {
+          "kind": "p",
+          "text": "At r = 0 the formula divides by zero. Skip that point."
+        },
+        {
+          "kind": "p",
+          "text": "Close to a charge the strength is huge. Cap the arrow length."
+        },
+        {
+          "kind": "p",
+          "text": "Later, for the stretch goals: moving charges make magnetic fields, and Maxwell's"
+        },
+        {
+          "kind": "p",
+          "text": "equations tie both together. Not needed for the MVP."
+        }
+      ]
+    },
+    {
+      "heading": "Cheat sheets: Python to JS, Unity/Blender to Three.js",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Python to JavaScript"
+        },
+        {
+          "kind": "p",
+          "text": "Python"
+        },
+        {
+          "kind": "p",
+          "text": "JavaScript"
+        },
+        {
+          "kind": "p",
+          "text": "x = 5"
+        },
+        {
+          "kind": "p",
+          "text": "const x = 5; (or let x = 5; if it changes)"
+        },
+        {
+          "kind": "p",
+          "text": "print(x)"
+        },
+        {
+          "kind": "p",
+          "text": "console.log(x);"
+        },
+        {
+          "kind": "p",
+          "text": "def f(a, b):"
+        },
+        {
+          "kind": "p",
+          "text": "function f(a, b) { ... }"
+        },
+        {
+          "kind": "p",
+          "text": "lambda a: a * 2"
+        },
+        {
+          "kind": "p",
+          "text": "(a) => a * 2"
+        },
+        {
+          "kind": "p",
+          "text": "if x == 1: / elif / else"
+        },
+        {
+          "kind": "p",
+          "text": "if (x === 1) { } else if { } else { }"
+        },
+        {
+          "kind": "p",
+          "text": "for i in range(5):"
+        },
+        {
+          "kind": "p",
+          "text": "for (let i = 0; i < 5; i++) { }"
+        },
+        {
+          "kind": "p",
+          "text": "for item in items:"
+        },
+        {
+          "kind": "p",
+          "text": "for (const item of items) { }"
+        },
+        {
+          "kind": "p",
+          "text": "items.append(x)"
+        },
+        {
+          "kind": "p",
+          "text": "items.push(x);"
+        },
+        {
+          "kind": "p",
+          "text": "len(items)"
+        },
+        {
+          "kind": "p",
+          "text": "items.length"
+        },
+        {
+          "kind": "p",
+          "text": "Python"
+        },
+        {
+          "kind": "p",
+          "text": "JavaScript"
+        },
+        {
+          "kind": "p",
+          "text": "[f(i) for i in items]"
+        },
+        {
+          "kind": "p",
+          "text": "items.map((i) => f(i))"
+        },
+        {
+          "kind": "p",
+          "text": "{\"a\": 1} (dict)"
+        },
+        {
+          "kind": "p",
+          "text": "{ a: 1 } (object)"
+        },
+        {
+          "kind": "p",
+          "text": "d[\"a\"]"
+        },
+        {
+          "kind": "p",
+          "text": "obj.a or obj[\"a\"]"
+        },
+        {
+          "kind": "p",
+          "text": "f\"hi {name}\""
+        },
+        {
+          "kind": "p",
+          "text": "`hi ${name}` (backticks)"
+        },
+        {
+          "kind": "p",
+          "text": "None , True , False"
+        },
+        {
+          "kind": "p",
+          "text": "null , true , false"
+        },
+        {
+          "kind": "p",
+          "text": "import math"
+        },
+        {
+          "kind": "p",
+          "text": "import * as THREE from \"three\";"
+        },
+        {
+          "kind": "p",
+          "text": "and , or , not"
+        },
+        {
+          "kind": "p",
+          "text": "&& , || , !"
+        },
+        {
+          "kind": "p",
+          "text": "Gotchas:"
+        },
+        {
+          "kind": "p",
+          "text": "Use === , never == ."
+        },
+        {
+          "kind": "p",
+          "text": "A function name without () is the function itself. With () it runs now."
+        },
+        {
+          "kind": "p",
+          "text": ".value from an HTML input is always a string. Wrap it: Number(slider.value) ."
+        },
+        {
+          "kind": "p",
+          "text": "Statements end with ; . Blocks use { } , not indentation."
+        },
+        {
+          "kind": "p",
+          "text": "Unity/Blender to Three.js"
+        },
+        {
+          "kind": "p",
+          "text": "You know"
+        },
+        {
+          "kind": "p",
+          "text": "Three.js"
+        },
+        {
+          "kind": "p",
+          "text": "Scene / hierarchy"
+        },
+        {
+          "kind": "p",
+          "text": "THREE.Scene , scene.add(obj)"
+        },
+        {
+          "kind": "p",
+          "text": "Camera component"
+        },
+        {
+          "kind": "p",
+          "text": "THREE.PerspectiveCamera(fov, aspect, near,"
+        },
+        {
+          "kind": "p",
+          "text": "far)"
+        },
+        {
+          "kind": "p",
+          "text": "Mesh + material"
+        },
+        {
+          "kind": "p",
+          "text": "THREE.Mesh(geometry, material)"
+        },
+        {
+          "kind": "p",
+          "text": "Transform position"
+        },
+        {
+          "kind": "p",
+          "text": "obj.position.set(x, y, z)"
+        },
+        {
+          "kind": "p",
+          "text": "Transform rotation (Euler)"
+        },
+        {
+          "kind": "p",
+          "text": "obj.rotation.x in radians"
+        },
+        {
+          "kind": "p",
+          "text": "Update()"
+        },
+        {
+          "kind": "p",
+          "text": "the function passed to"
+        },
+        {
+          "kind": "p",
+          "text": "renderer.setAnimationLoop"
+        },
+        {
+          "kind": "p",
+          "text": "Vector3 maths"
+        },
+        {
+          "kind": "p",
+          "text": "THREE.Vector3 : .add , .sub , .normalize ,"
+        },
+        {
+          "kind": "p",
+          "text": ".length , .multiplyScalar , .clone"
+        },
+        {
+          "kind": "p",
+          "text": "Orbit viewport navigation"
+        },
+        {
+          "kind": "p",
+          "text": "OrbitControls"
+        },
+        {
+          "kind": "p",
+          "text": "You know"
+        },
+        {
+          "kind": "p",
+          "text": "Three.js"
+        },
+        {
+          "kind": "p",
+          "text": "Raycast from camera"
+        },
+        {
+          "kind": "p",
+          "text": "THREE.Raycaster"
+        },
+        {
+          "kind": "p",
+          "text": "Unlit material"
+        },
+        {
+          "kind": "p",
+          "text": "MeshBasicMaterial (no lights needed)"
+        },
+        {
+          "kind": "p",
+          "text": "Lit material (PBR)"
+        },
+        {
+          "kind": "p",
+          "text": "MeshStandardMaterial (needs a light)"
+        },
+        {
+          "kind": "p",
+          "text": "Three.js is right-handed with Y up (Unity is left-handed with Y up, Blender is righthanded with Z up). Methods like .add and .sub change the vector in place. Use"
+        },
+        {
+          "kind": "p",
+          "text": ".clone() first to keep the original."
+        }
+      ]
+    },
+    {
+      "heading": "When stuck",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Work down this list before asking for help. Most bugs are in the first four."
+        },
+        {
+          "kind": "p",
+          "text": "1. Open the console ( F12 , Console tab). Read the red error that mentions main.js ."
+        },
+        {
+          "kind": "p",
+          "text": "Ignore errors from browser extensions like Grammarly."
+        },
+        {
+          "kind": "p",
+          "text": "2. Hard refresh with Ctrl+Shift+R . The browser may be showing an old file."
+        },
+        {
+          "kind": "p",
+          "text": "3. Check the server is running and you opened the localhost URL, not the file"
+        },
+        {
+          "kind": "p",
+          "text": "directly."
+        },
+        {
+          "kind": "p",
+          "text": "4. Check the branch name in your Git Bash prompt. A stray character shows up there."
+        },
+        {
+          "kind": "p",
+          "text": "5. Print the value. Add console.log(thing) and look at what it really is. Remove it"
+        },
+        {
+          "kind": "p",
+          "text": "before committing."
+        },
+        {
+          "kind": "p",
+          "text": "6. Shrink the problem. Comment out half the code and see if the bug stays."
+        },
+        {
+          "kind": "p",
+          "text": "7. Backend bugs: read the terminal where the server runs. Test the route in the browser"
+        },
+        {
+          "kind": "p",
+          "text": "or with fetch in the console before blaming the UI."
+        },
+        {
+          "kind": "p",
+          "text": "8. Network tab ( F12 , Network): did the request go out, what status code came back,"
+        },
+        {
+          "kind": "p",
+          "text": "what did the response say?"
+        },
+        {
+          "kind": "p",
+          "text": "Common errors:"
+        },
+        {
+          "kind": "p",
+          "text": "Message"
+        },
+        {
+          "kind": "p",
+          "text": "Usual cause"
+        },
+        {
+          "kind": "p",
+          "text": "X is not defined"
+        },
+        {
+          "kind": "p",
+          "text": "Typo, or the variable was declared in another"
+        },
+        {
+          "kind": "p",
+          "text": "scope or file"
+        },
+        {
+          "kind": "p",
+          "text": "Cannot read properties of null"
+        },
+        {
+          "kind": "p",
+          "text": "querySelector found nothing, or the script"
+        },
+        {
+          "kind": "p",
+          "text": "ran before the element existed"
+        },
+        {
+          "kind": "p",
+          "text": "Message"
+        },
+        {
+          "kind": "p",
+          "text": "Usual cause"
+        },
+        {
+          "kind": "p",
+          "text": "Failed to resolve module specifier"
+        },
+        {
+          "kind": "p",
+          "text": "\"three\""
+        },
+        {
+          "kind": "p",
+          "text": "The import map is missing or placed after the"
+        },
+        {
+          "kind": "p",
+          "text": "module script"
+        },
+        {
+          "kind": "p",
+          "text": "CORS policy"
+        },
+        {
+          "kind": "p",
+          "text": "The server is not sending CORS headers"
+        },
+        {
+          "kind": "p",
+          "text": "Blank black page"
+        },
+        {
+          "kind": "p",
+          "text": "Forgot scene.add(...) , or the camera is"
+        },
+        {
+          "kind": "p",
+          "text": "inside or facing away from the object"
+        },
+        {
+          "kind": "p",
+          "text": "EADDRINUSE"
+        },
+        {
+          "kind": "p",
+          "text": "That port is already used. Pick another with l or in .env"
+        },
+        {
+          "kind": "p",
+          "text": "Git push src refspec ... does not"
+        },
+        {
+          "kind": "p",
+          "text": "The branch name you typed doesn't match"
+        },
+        {
+          "kind": "p",
+          "text": "your real branch"
+        },
+        {
+          "kind": "p",
+          "text": "match any"
+        }
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "1",
+      "title": "Repo setup",
+      "body": "GitHub repo, folders, blank page",
+      "doneWhen": null,
+      "steps": []
+    },
+    {
+      "id": "2",
+      "title": "First JavaScript",
+      "body": "a heading changed by main.js",
+      "doneWhen": null,
+      "steps": []
+    },
+    {
+      "id": "3",
+      "title": "First Three.js scene",
+      "body": "a spinning cube, then a red point charge",
+      "doneWhen": null,
+      "steps": []
+    },
+    {
+      "id": "4",
+      "title": "Field math",
+      "body": "arrows around the charge (one arrow done)",
+      "doneWhen": null,
+      "steps": [
+        {
+          "id": "4.1",
+          "title": "One arrow (done)",
+          "fields": {
+            "Note": "You placed one arrow pointing away from the charge."
+          }
+        },
+        {
+          "id": "4.2",
+          "title": "Arrow length shows strength",
+          "fields": {
+            "Goal": "the closer the arrow is to the charge, the longer it is.",
+            "You'll see": "change arrowPosition from 2 to 1, then 3. The arrow grows and shrinks.",
+            "Just enough": "field strength is charge / distance². Cheat sheet: Strength.",
+            "Your task": "get distance with arrowPosition.distanceTo(charge.position). Compute strength from it. Call arrow.setLength(strength).",
+            "Commit": "feat: arrow length shows field strength"
+          }
+        },
+        {
+          "id": "4.3",
+          "title": "Field function",
+          "fields": {
+            "Goal": "move the maths into one function you can reuse for any point.",
+            "You'll see": "the arrow looks identical, because only your code structure changed.",
+            "Just enough": "JS functions return values: function fieldAt(position) {... return fieldVector; }. Objects are like Python dicts: { position:..., q: 1 }.",
+            "Your task": "write fieldAt(position) that returns a THREE.Vector3 with direction and strength built in ( direction.multiplyScalar(strength)). Draw the arrow from its result.",
+            "Commit": "refactor: extract fieldAt function"
+          }
+        },
+        {
+          "id": "4.4",
+          "title": "A row, then a plane of arrows",
+          "fields": {
+            "Goal": "many arrows at once.",
+            "You'll see": "first a line of arrows going out, then a flat grid, all pointing away from the charge.",
+            "Just enough": "for (let x = -3; x <= 3; x += 1) {... }. Nest two loops for a grid. Skip the point at the charge itself, where distance is 0.",
+            "Your task": "loop over positions, call fieldAt, make an ArrowHelper per point, scene.add each. Cap the length ( Math.min(length, 1)) so near arrows don't explode.",
+            "Commit": "feat: draw a grid of field arrows"
+          }
+        },
+        {
+          "id": "4.5",
+          "title": "Full 3D grid and color",
+          "fields": {
+            "Goal": "arrows fill a 3D volume, colored by strength.",
+            "You'll see": "a cloud of arrows around the sphere. Strong ones are bright, weak ones dim.",
+            "Just enough": "new THREE.Color().setHSL(h, s, l) builds a color from numbers. Use strength to pick the lightness.",
+            "Your task": "add a third loop for z. Keep the spacing large (about 1.5) so it stays fast.",
+            "Commit": "feat: 3D field grid with strength colors"
+          }
+        },
+        {
+          "id": "4.6",
+          "title": "Two charges and negative charge",
+          "fields": {
+            "Goal": "a second charge, plus a negative one.",
+            "You'll see": "with one + and one −, arrows curve from the red sphere to the blue one (a dipole).",
+            "Just enough": "fields from several charges add as vectors (superposition). A negative charge flips the direction. Cheat sheet: Superposition.",
+            "Your task": "store charges in an array of { position, q }. In fieldAt, loop over the array and add each contribution with total.add(...). Color spheres red for q > 0 and blue for q < 0.",
+            "Commit": "feat: support multiple charges and polarity"
+          }
+        },
+        {
+          "id": "4.7",
+          "title": "Field lines (challenge)",
+          "fields": {
+            "Goal": "smooth curves instead of arrows.",
+            "You'll see": "lines leaving the red sphere and bending into the blue one.",
+            "Just enough": "start near a positive charge, step a small distance along fieldAt direction, repeat about 200 times, store each point.",
+            "Your task": "collect points in an array, build new THREE.BufferGeometry().setFromPoints(points), draw with new THREE.Line(geometry, material). Start lines from points on a small circle around each positive charge.",
+            "Commit": "feat: trace field lines"
+          }
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Interactivity",
+      "body": "orbit camera, sliders, click to place charges",
+      "doneWhen": null,
+      "steps": [
+        {
+          "id": "5.1",
+          "title": "Orbit camera",
+          "fields": {
+            "Goal": "drag the mouse to look around the scene.",
+            "You'll see": "left-drag orbits, scroll zooms, right-drag pans.",
+            "Just enough": "Three.js add-ons live in a separate path. Add \"three/addons/\": \"https://unpkg.com/three@0.170.0/examples/jsm/\" to your import map.",
+            "Your task": "import { OrbitControls } from \"three/addons/controls/OrbitControls.js\";, create new OrbitControls(camera, renderer.domElement), and call controls.update() inside animate.",
+            "Commit": "feat: add orbit camera controls"
+          }
+        },
+        {
+          "id": "5.2",
+          "title": "Slider changes the charge",
+          "fields": {
+            "Goal": "a slider that changes charge strength live.",
+            "You'll see": "drag the slider and every arrow resizes.",
+            "Just enough": "HTML <input type=\"range\" id=\"charge-slider\" min=\"-5\" max=\"5\" step=\"0.5\">. In JS: slider.addEventListener(\"input\", () => {... }). The arrow () => {} is a short anonymous function. Read the value with Number(slider.value), since it arrives as a string.",
+            "Your task": "add the slider to index.html, position it over the canvas with CSS ( position: absolute), write a rebuildField() that removes old arrows and draws new ones, and call it from the slider handler.",
+            "Commit": "feat: slider controls charge magnitude"
+          }
+        },
+        {
+          "id": "5.3",
+          "title": "Click to place a charge",
+          "fields": {
+            "Goal": "click the scene to drop a new charge.",
+            "You'll see": "each click adds a sphere and the field updates.",
+            "Just enough": "a Raycaster shoots a ray from the camera through the mouse position. Intersect it with an invisible plane ( THREE.Plane) to get a 3D point. Mouse coordinates must be converted to the range −1 to 1 first.",
+            "Your task": "listen for \"click\" on renderer.domElement, convert mouse coordinates, use raycaster.setFromCamera, ray.intersectPlane, then push a new charge and call rebuildField().",
+            "Commit": "feat: click to place charges"
+          }
+        },
+        {
+          "id": "5.4",
+          "title": "Drag charges and flip polarity",
+          "fields": {
+            "Goal": "pick up a charge and move it, and toggle its sign.",
+            "You'll see": "arrows follow the charge while you drag. Right-click or a key press flips + and −.",
+            "Just enough": "disable orbit while dragging: controls.enabled = false. Events to use: pointerdown, pointermove, pointerup.",
+            "Your task": "on pointerdown raycast against the charge meshes. While dragging, update its position and rebuild the field.",
+            "Commit": "feat: drag charges and toggle polarity"
+          }
+        },
+        {
+          "id": "5.5",
+          "title": "Split into modules",
+          "fields": {
+            "Goal": "clean files you would not be embarrassed to show in an interview.",
+            "You'll see": "nothing new on screen, and it must still work identically. That is the test.",
+            "Just enough": "export function fieldAt(...) in one file, import { fieldAt } from \"./field.js\"; in another.",
+            "Your task": "create js/field.js (maths), js/charges.js (spheres), js/ui.js (slider, clicks), and keep main.js short.",
+            "Commit": "refactor: split code into modules"
+          }
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Backend setup",
+      "body": "Express server with a first endpoint",
+      "doneWhen": null,
+      "steps": [
+        {
+          "id": "6.1",
+          "title": "First endpoint",
+          "fields": {
+            "Goal": "a server that answers a request.",
+            "You'll see": "open http://localhost:4000/api/health in the browser and read {\"status\":\"ok\"}.",
+            "Just enough": "a backend is a program that waits for requests and sends back responses. Express maps a URL to a function: app.get(\"/path\", (req, res) => { res.json({... }); }).",
+            "Your task": "in server/, run npm init -y and npm install express. Set \"type\": \"module\" in package.json so you can use import. Create server/index.js: import express, make const app = express(), add the /api/health route, call app.listen(4000,...) with a log line. Start it with node index.js.",
+            "Commit": "feat: add express server with health endpoint"
+          }
+        },
+        {
+          "id": "6.2",
+          "title": "Auto-restart and config",
+          "fields": {
+            "Goal": "the server restarts whenever you save.",
+            "You'll see": "change the JSON in your health route, save, refresh the browser. The response changes without a manual restart.",
+            "Just enough": "npm install -D nodemon (a dev-only tool). Scripts in package.json become commands: npm run dev. Use process.env.PORT with dotenv so the port is not hard-coded. Commit a.env.example, never.env.",
+            "Your task": "add a \"dev\": \"nodemon index.js\" script, install dotenv, read the port from.env.",
+            "Commit": "chore: add nodemon and env config"
+          }
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "title": "API",
+      "body": "frontend talks to backend",
+      "doneWhen": null,
+      "steps": [
+        {
+          "id": "7.1",
+          "title": "Frontend calls backend",
+          "fields": {
+            "Goal": "the Three.js page shows data from your server.",
+            "You'll see": "the page prints Server: ok in a corner label, fetched live.",
+            "Just enough": "the browser blocks requests between different ports unless the server allows it (CORS). Install cors and call app.use(cors()). In the browser, fetch returns a promise. async / await lets you write it like normal sequential code: const response = await fetch(url); const data = await response.json();.",
+            "Your task": "enable CORS on the server. Add a <div id=\"status\"> to index.html. Write an async function checkServer() in the client that fetches /api/health and writes the result into that div. Wrap it in try / catch so an offline server shows Server: offline.",
+            "Commit": "feat: client reads server health"
+          }
+        },
+        {
+          "id": "7.2",
+          "title": "Save configurations in memory",
+          "fields": {
+            "Goal": "POST a charge setup, then GET it back.",
+            "You'll see": "a test request in the browser console returns the same charges you sent.",
+            "Just enough": "POST sends data in the request body. Express reads JSON bodies after app.use(express.json()). Data lives in req.body. Status codes: 200 OK, 201 created, 400 bad input, 404 not found.",
+            "Your task": "keep a configs array in memory. Add POST /api/configs (store { id, name, charges }, return 201) and GET /api/configs (return the list). Test with fetch calls typed in the browser console.",
+            "Commit": "feat: in-memory configs API"
+          }
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "title": "Save and load a field configuration",
+      "body": "",
+      "doneWhen": null,
+      "steps": [
+        {
+          "id": "8.1",
+          "title": "Real database",
+          "fields": {
+            "Goal": "saves survive a server restart.",
+            "You'll see": "save a config, restart the server, and GET /api/configs still returns it.",
+            "Just enough": "SQLite stores everything in one file, with no database server to install. Use the better-sqlite3 package. A table is like a CSV with types: configs(id, name, data, created_at). Store the charges array as a JSON string in data. Add the database file to.gitignore.",
+            "Your task": "create the table on startup, rewrite the two routes to use SQL ( INSERT and SELECT) with parameter placeholders ( ?), never string concatenation.",
+            "Commit": "feat: persist configs in SQLite"
+          }
+        },
+        {
+          "id": "8.2",
+          "title": "Save button",
+          "fields": {
+            "Goal": "one button saves what is on screen.",
+            "You'll see": "click Save, enter a name, and a message says Saved.",
+            "Just enough": "JSON.stringify(charges) turns an array into text for the request. Positions are Vector3 objects, so store plain { x, y, z, q } numbers.",
+            "Your task": "add a Save button, ask for a name with prompt(), build the plain-object array from your charges, POST it.",
+            "Commit": "feat: save field configuration from UI"
+          }
+        },
+        {
+          "id": "8.3",
+          "title": "Load list",
+          "fields": {
+            "Goal": "pick a saved setup and see it recreated.",
+            "You'll see": "a dropdown of saved names. Choose one and the charges and arrows jump to that setup.",
+            "Just enough": "GET /api/configs/:id uses a route parameter, read as req.params.id. Clear the scene before rebuilding it, or charges pile up.",
+            "Your task": "add the:id route, fill a <select> from GET /api/configs, and on change fetch the config, replace the charges array, and call rebuildField().",
+            "Commit": "feat: load saved configurations"
+          }
+        },
+        {
+          "id": "8.4",
+          "title": "Validate and delete",
+          "fields": {
+            "Goal": "the server never trusts the client.",
+            "You'll see": "sending bad data returns a 400 with a message. A Delete button removes a save.",
+            "Just enough": "validate on the server: name is a non-empty string, charges is an array, each charge has numeric x, y, z, q. Return res.status(400).json({ error: \"...\" }).",
+            "Your task": "add a validateConfig function, use it in POST, add DELETE /api/configs/:id and a button.",
+            "Commit": "feat: validate configs and add delete"
+          }
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "title": "Accounts",
+      "body": "login, so saves are personal",
+      "doneWhen": null,
+      "steps": [
+        {
+          "id": "9.1",
+          "title": "Register",
+          "fields": {
+            "Goal": "create a user without ever storing their password as plain text.",
+            "You'll see": "POST /api/register returns 201. In the database the password column is a long random-looking hash.",
+            "Just enough": "a hash is a one-way scramble. You store the hash and compare hashes later. Use the bcryptjs package: await bcrypt.hash(password, 10).",
+            "Your task": "add a users table ( id, email unique, password_hash). Write the register route with validation: valid email, password at least 8 characters, duplicate email returns 409.",
+            "Commit": "feat: user registration"
+          }
+        },
+        {
+          "id": "9.2",
+          "title": "Login and token",
+          "fields": {
+            "Goal": "prove who you are without sending the password on every request.",
+            "You'll see": "POST /api/login returns a token. Paste it into jwt.io's decoder to see your user id inside.",
+            "Just enough": "a JWT is a signed note saying \"this is user 7\". Only the server's secret can sign it. Use jsonwebtoken: jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: \"1h\" }). Put JWT_SECRET in.env.",
+            "Your task": "write the login route. Compare with bcrypt.compare. Return the same vague error ( 401, \"Invalid credentials\") for a wrong email or a wrong password.",
+            "Commit": "feat: login with JWT"
+          }
+        },
+        {
+          "id": "9.3",
+          "title": "Protect the routes",
+          "fields": {
+            "Goal": "saves belong to a user.",
+            "You'll see": "POST /api/configs without a token returns 401. With a token it works, and GET only returns that user's saves.",
+            "Just enough": "middleware is a function that runs before your route: (req, res, next) => {...; next(); }. Read the Authorization: Bearer <token> header, verify it, attach req.userId.",
+            "Your task": "write requireAuth, add user_id to the configs table, filter every query by it.",
+            "Commit": "feat: require auth for configs"
+          }
+        },
+        {
+          "id": "9.4",
+          "title": "Login screen",
+          "fields": {
+            "Goal": "log in from the page.",
+            "You'll see": "a small form. After login the header shows your email and the save list fills with your saves. A second account sees different ones.",
+            "Just enough": "localStorage.setItem(\"token\", token) keeps the token across refreshes. Send it as a headers: { Authorization:... } option in fetch.",
+            "Your task": "add login, register and logout to the UI, wrap fetch in one helper that adds the header, and handle 401 by showing the login form.",
+            "Commit": "feat: login and register UI"
+          }
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "title": "Polish and deploy",
+      "body": "live link, README, portfolio write-up",
+      "doneWhen": null,
+      "steps": [
+        {
+          "id": "10.1",
+          "title": "Lint and format (do this any time after 5.5)",
+          "fields": {
+            "Goal": "the tools enforce your style, like a real team.",
+            "You'll see": "npm run lint lists problems, npm run format fixes spacing instantly.",
+            "Just enough": "ESLint finds bugs and rule breaks. Prettier formats code automatically.",
+            "Your task": "install both at the repo root, add scripts, fix what they report. Optional: a GitHub Actions workflow that runs npm run lint on every PR, so a red check blocks bad merges.",
+            "Commit": "chore: add eslint and prettier"
+          }
+        },
+        {
+          "id": "10.2",
+          "title": "Config and polish",
+          "fields": {
+            "Goal": "nothing hard-coded to localhost.",
+            "You'll see": "the app works with the API URL changed in one place.",
+            "Your task": "move the API base URL into a single constant. Add loading and error messages for every request. Fix the rough edges you noticed (arrow density, camera start position, slider labels).",
+            "Commit": "refactor: central API config and error states"
+          }
+        },
+        {
+          "id": "10.3",
+          "title": "Deploy",
+          "fields": {
+            "Goal": "a live link anyone can open.",
+            "You'll see": "your app on a public URL, saving to a public API.",
+            "Just enough": "the frontend is static files, so GitHub Pages serves it. The backend needs a host such as Render or Railway. Free tiers often reset local files, so check whether your SQLite file will survive. If not, use a hosted database or a persistent disk.",
+            "Your task": "deploy the backend, set its environment variables there (never in Git), change the client's API URL, turn on GitHub Pages for client/, and test register, save and load on the live site.",
+            "Commit": "chore: deployment config"
+          }
+        },
+        {
+          "id": "10.4",
+          "title": "Portfolio",
+          "fields": {
+            "Goal": "a repo a recruiter understands in 30 seconds.",
+            "You'll see": "a README with a screenshot or GIF at the top.",
+            "Your task": "write the README yourself: one-line pitch, GIF, live link, tech stack, how to run locally, API table, what you learned. Record the GIF with ScreenToGif. CV bullet (adapt it): Built a full-stack 3D electromagnetic field visualizer with Three.js, Node/Express, SQLite and JWT auth; live field computation, save/load, deployed.",
+            "Commit": "docs: write README"
+          }
+        }
+      ]
+    }
+  ],
+  "speech": {
+    "overview": "This guide is a map, not a textbook. Each step gives you a goal, a task and a result to see on screen. You write the code. 1. Something moves on screen at every step. If nothing runs, the step is too big. Split it. 2. You type every line. Ask Claude for hints, never for finished code. 3. One step at a time. Finish, see the result, commit, then move on. 4. One branch and one PR per step. main always works. Every step has the same five lines: Goal, You'll see, Just enough, Your task and Commit.",
+    "stage.1": "Phase 1: Repo setup. GitHub repo, folders, blank page",
+    "stage.2": "Phase 2: First JavaScript. a heading changed by main.js",
+    "stage.3": "Phase 3: First Three.js scene. a spinning cube, then a red point charge",
+    "stage.4": "Phase 4: Field math. arrows around the charge (one arrow done)",
+    "step.4.1": "Step 4.1: One arrow (done). Note: You placed one arrow pointing away from the charge.",
+    "step.4.2": "Step 4.2: Arrow length shows strength. Goal: the closer the arrow is to the charge, the longer it is. You'll see: change arrowPosition from 2 to 1, then 3. The arrow grows and shrinks. Just enough: field strength is charge / distance². Cheat sheet: Strength. Your task: get distance with arrowPosition.distanceTo(charge.position). Compute strength from it. Call arrow.setLength(strength).",
+    "step.4.3": "Step 4.3: Field function. Goal: move the maths into one function you can reuse for any point. You'll see: the arrow looks identical, because only your code structure changed. Just enough: JS functions return values: function fieldAt(position) {... return fieldVector; }. Objects are like Python dicts: { position:..., q: 1 }. Your task: write fieldAt(position) that returns a THREE.Vector3 with direction and strength built in ( direction.multiplyScalar(strength)). Draw the arrow from its result.",
+    "step.4.4": "Step 4.4: A row, then a plane of arrows. Goal: many arrows at once. You'll see: first a line of arrows going out, then a flat grid, all pointing away from the charge. Just enough: for (let x = -3; x <= 3; x += 1) {... }. Nest two loops for a grid. Skip the point at the charge itself, where distance is 0. Your task: loop over positions, call fieldAt, make an ArrowHelper per point, scene.add each. Cap the length ( Math.min(length, 1)) so near arrows don't explode.",
+    "step.4.5": "Step 4.5: Full 3D grid and color. Goal: arrows fill a 3D volume, colored by strength. You'll see: a cloud of arrows around the sphere. Strong ones are bright, weak ones dim. Just enough: new THREE.Color().setHSL(h, s, l) builds a color from numbers. Use strength to pick the lightness. Your task: add a third loop for z. Keep the spacing large (about 1.5) so it stays fast.",
+    "step.4.6": "Step 4.6: Two charges and negative charge. Goal: a second charge, plus a negative one. You'll see: with one + and one −, arrows curve from the red sphere to the blue one (a dipole). Just enough: fields from several charges add as vectors (superposition). A negative charge flips the direction. Cheat sheet: Superposition. Your task: store charges in an array of { position, q }. In fieldAt, loop over the array and add each contribution with total.add(...). Color spheres red for q > 0 and blue for q < 0.",
+    "step.4.7": "Step 4.7: Field lines (challenge). Goal: smooth curves instead of arrows. You'll see: lines leaving the red sphere and bending into the blue one. Just enough: start near a positive charge, step a small distance along fieldAt direction, repeat about 200 times, store each point. Your task: collect points in an array, build new THREE.BufferGeometry().setFromPoints(points), draw with new THREE.Line(geometry, material). Start lines from points on a small circle around each positive charge.",
+    "stage.5": "Phase 5: Interactivity. orbit camera, sliders, click to place charges",
+    "step.5.1": "Step 5.1: Orbit camera. Goal: drag the mouse to look around the scene. You'll see: left-drag orbits, scroll zooms, right-drag pans. Just enough: Three.js add-ons live in a separate path. Add \"three/addons/\": \"https://unpkg.com/three@0.170.0/examples/jsm/\" to your import map. Your task: import { OrbitControls } from \"three/addons/controls/OrbitControls.js\";, create new OrbitControls(camera, renderer.domElement), and call controls.update() inside animate.",
+    "step.5.2": "Step 5.2: Slider changes the charge. Goal: a slider that changes charge strength live. You'll see: drag the slider and every arrow resizes. Just enough: HTML <input type=\"range\" id=\"charge-slider\" min=\"-5\" max=\"5\" step=\"0.5\">. In JS: slider.addEventListener(\"input\", () => {... }). The arrow () => {} is a short anonymous function. Read the value with Number(slider.value), since it arrives as a string. Your task: add the slider to index.html, position it over the canvas with CSS ( position: absolute), write a rebuildField() that removes old arrows and draws new ones, and call it from the slider handler.",
+    "step.5.3": "Step 5.3: Click to place a charge. Goal: click the scene to drop a new charge. You'll see: each click adds a sphere and the field updates. Just enough: a Raycaster shoots a ray from the camera through the mouse position. Intersect it with an invisible plane ( THREE.Plane) to get a 3D point. Mouse coordinates must be converted to the range −1 to 1 first. Your task: listen for \"click\" on renderer.domElement, convert mouse coordinates, use raycaster.setFromCamera, ray.intersectPlane, then push a new charge and call rebuildField().",
+    "step.5.4": "Step 5.4: Drag charges and flip polarity. Goal: pick up a charge and move it, and toggle its sign. You'll see: arrows follow the charge while you drag. Right-click or a key press flips + and −. Just enough: disable orbit while dragging: controls.enabled = false. Events to use: pointerdown, pointermove, pointerup. Your task: on pointerdown raycast against the charge meshes. While dragging, update its position and rebuild the field.",
+    "step.5.5": "Step 5.5: Split into modules. Goal: clean files you would not be embarrassed to show in an interview. You'll see: nothing new on screen, and it must still work identically. That is the test. Just enough: export function fieldAt(...) in one file, import { fieldAt } from \"./field.js\"; in another. Your task: create js/field.js (maths), js/charges.js (spheres), js/ui.js (slider, clicks), and keep main.js short.",
+    "stage.6": "Phase 6: Backend setup. Express server with a first endpoint",
+    "step.6.1": "Step 6.1: First endpoint. Goal: a server that answers a request. You'll see: open http://localhost:4000/api/health in the browser and read {\"status\":\"ok\"}. Just enough: a backend is a program that waits for requests and sends back responses. Express maps a URL to a function: app.get(\"/path\", (req, res) => { res.json({... }); }). Your task: in server/, run npm init -y and npm install express. Set \"type\": \"module\" in package.json so you can use import. Create server/index.js: import express, make const app = express(), add the /api/health route, call app.listen(4000,...) with a log line. Start it with node index.js.",
+    "step.6.2": "Step 6.2: Auto-restart and config. Goal: the server restarts whenever you save. You'll see: change the JSON in your health route, save, refresh the browser. The response changes without a manual restart. Just enough: npm install -D nodemon (a dev-only tool). Scripts in package.json become commands: npm run dev. Use process.env.PORT with dotenv so the port is not hard-coded. Commit a.env.example, never.env. Your task: add a \"dev\": \"nodemon index.js\" script, install dotenv, read the port from.env.",
+    "stage.7": "Phase 7: API. frontend talks to backend",
+    "step.7.1": "Step 7.1: Frontend calls backend. Goal: the Three.js page shows data from your server. You'll see: the page prints Server: ok in a corner label, fetched live. Just enough: the browser blocks requests between different ports unless the server allows it (CORS). Install cors and call app.use(cors()). In the browser, fetch returns a promise. async / await lets you write it like normal sequential code: const response = await fetch(url); const data = await response.json();. Your task: enable CORS on the server. Add a <div id=\"status\"> to index.html. Write an async function checkServer() in the client that fetches /api/health and writes the result into that div. Wrap it in try / catch so an offline server shows Server: offline.",
+    "step.7.2": "Step 7.2: Save configurations in memory. Goal: POST a charge setup, then GET it back. You'll see: a test request in the browser console returns the same charges you sent. Just enough: POST sends data in the request body. Express reads JSON bodies after app.use(express.json()). Data lives in req.body. Status codes: 200 OK, 201 created, 400 bad input, 404 not found. Your task: keep a configs array in memory. Add POST /api/configs (store { id, name, charges }, return 201) and GET /api/configs (return the list). Test with fetch calls typed in the browser console.",
+    "stage.8": "Phase 8: Save and load a field configuration.",
+    "step.8.1": "Step 8.1: Real database. Goal: saves survive a server restart. You'll see: save a config, restart the server, and GET /api/configs still returns it. Just enough: SQLite stores everything in one file, with no database server to install. Use the better-sqlite3 package. A table is like a CSV with types: configs(id, name, data, created_at). Store the charges array as a JSON string in data. Add the database file to.gitignore. Your task: create the table on startup, rewrite the two routes to use SQL ( INSERT and SELECT) with parameter placeholders ( ?), never string concatenation.",
+    "step.8.2": "Step 8.2: Save button. Goal: one button saves what is on screen. You'll see: click Save, enter a name, and a message says Saved. Just enough: JSON.stringify(charges) turns an array into text for the request. Positions are Vector3 objects, so store plain { x, y, z, q } numbers. Your task: add a Save button, ask for a name with prompt(), build the plain-object array from your charges, POST it.",
+    "step.8.3": "Step 8.3: Load list. Goal: pick a saved setup and see it recreated. You'll see: a dropdown of saved names. Choose one and the charges and arrows jump to that setup. Just enough: GET /api/configs/:id uses a route parameter, read as req.params.id. Clear the scene before rebuilding it, or charges pile up. Your task: add the:id route, fill a <select> from GET /api/configs, and on change fetch the config, replace the charges array, and call rebuildField().",
+    "step.8.4": "Step 8.4: Validate and delete. Goal: the server never trusts the client. You'll see: sending bad data returns a 400 with a message. A Delete button removes a save. Just enough: validate on the server: name is a non-empty string, charges is an array, each charge has numeric x, y, z, q. Return res.status(400).json({ error: \"...\" }). Your task: add a validateConfig function, use it in POST, add DELETE /api/configs/:id and a button.",
+    "stage.9": "Phase 9: Accounts. login, so saves are personal",
+    "step.9.1": "Step 9.1: Register. Goal: create a user without ever storing their password as plain text. You'll see: POST /api/register returns 201. In the database the password column is a long random-looking hash. Just enough: a hash is a one-way scramble. You store the hash and compare hashes later. Use the bcryptjs package: await bcrypt.hash(password, 10). Your task: add a users table ( id, email unique, password_hash). Write the register route with validation: valid email, password at least 8 characters, duplicate email returns 409.",
+    "step.9.2": "Step 9.2: Login and token. Goal: prove who you are without sending the password on every request. You'll see: POST /api/login returns a token. Paste it into jwt.io's decoder to see your user id inside. Just enough: a JWT is a signed note saying \"this is user 7\". Only the server's secret can sign it. Use jsonwebtoken: jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: \"1h\" }). Put JWT_SECRET in.env. Your task: write the login route. Compare with bcrypt.compare. Return the same vague error ( 401, \"Invalid credentials\") for a wrong email or a wrong password.",
+    "step.9.3": "Step 9.3: Protect the routes. Goal: saves belong to a user. You'll see: POST /api/configs without a token returns 401. With a token it works, and GET only returns that user's saves. Just enough: middleware is a function that runs before your route: (req, res, next) => {...; next(); }. Read the Authorization: Bearer <token> header, verify it, attach req.userId. Your task: write requireAuth, add user_id to the configs table, filter every query by it.",
+    "step.9.4": "Step 9.4: Login screen. Goal: log in from the page. You'll see: a small form. After login the header shows your email and the save list fills with your saves. A second account sees different ones. Just enough: localStorage.setItem(\"token\", token) keeps the token across refreshes. Send it as a headers: { Authorization:... } option in fetch. Your task: add login, register and logout to the UI, wrap fetch in one helper that adds the header, and handle 401 by showing the login form.",
+    "stage.10": "Phase 10: Polish and deploy. live link, README, portfolio write-up",
+    "step.10.1": "Step 10.1: Lint and format (do this any time after 5.5). Goal: the tools enforce your style, like a real team. You'll see: npm run lint lists problems, npm run format fixes spacing instantly. Just enough: ESLint finds bugs and rule breaks. Prettier formats code automatically. Your task: install both at the repo root, add scripts, fix what they report. Optional: a GitHub Actions workflow that runs npm run lint on every PR, so a red check blocks bad merges.",
+    "step.10.2": "Step 10.2: Config and polish. Goal: nothing hard-coded to localhost. You'll see: the app works with the API URL changed in one place. Your task: move the API base URL into a single constant. Add loading and error messages for every request. Fix the rough edges you noticed (arrow density, camera start position, slider labels).",
+    "step.10.3": "Step 10.3: Deploy. Goal: a live link anyone can open. You'll see: your app on a public URL, saving to a public API. Just enough: the frontend is static files, so GitHub Pages serves it. The backend needs a host such as Render or Railway. Free tiers often reset local files, so check whether your SQLite file will survive. If not, use a hosted database or a persistent disk. Your task: deploy the backend, set its environment variables there (never in Git), change the client's API URL, turn on GitHub Pages for client/, and test register, save and load on the live site.",
+    "step.10.4": "Step 10.4: Portfolio. Goal: a repo a recruiter understands in 30 seconds. You'll see: a README with a screenshot or GIF at the top. Your task: write the README yourself: one-line pitch, GIF, live link, tech stack, how to run locally, API table, what you learned. Record the GIF with ScreenToGif. CV bullet (adapt it): Built a full-stack 3D electromagnetic field visualizer with Three.js, Node/Express, SQLite and JWT auth; live field computation, save/load, deployed."
+  }
+}

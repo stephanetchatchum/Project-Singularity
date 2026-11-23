@@ -1,0 +1,352 @@
+{
+  "projectId": "p4-ai-pilot",
+  "sources": ["P4_AI_Pilot_Rocket_Landing.md"],
+  "sections": [
+    {
+      "heading": "GOAL",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Build a simple rocket landing world, then teach a computer pilot to land the rocket softly on a pad. First I write a pilot by hand with physics. Then I let a reinforcement learning agent learn to do it by trial and error. At the end I compare the two. Do one stage at a time. Ignore later stages until the current one is ticked."
+        }
+      ]
+    },
+    {
+      "heading": "THE IDEA IN PLAIN WORDS",
+      "items": [
+        {
+          "kind": "p",
+          "text": "A landing rocket falls, and the pilot can switch the engine on to slow down. Burn too early and the rocket runs out of fuel or goes back up. Burn too late and it crashes. The perfect plan is to fall freely, then burn at exactly the right height, so the speed reaches zero right at the ground (the suicide burn). A learning agent has no physics knowledge. It tries thousands of landings, gets a reward for a soft landing and a penalty for a crash, and slowly learns the same idea."
+        }
+      ]
+    },
+    {
+      "heading": "THE BIG SIMPLIFICATION",
+      "items": [
+        {
+          "kind": "p",
+          "text": "A flat 2D world. The rocket has a position (x, y), a velocity (vx, vy), a tilt angle theta and a spin rate omega. Gravity is constant at g = 9.81 m/s². The ground is flat at y = 0 and the pad is a stretch of it. The engine has a maximum thrust and can swivel a little (gimbal). Air drag is ignored at first. I use SI units."
+        }
+      ]
+    },
+    {
+      "heading": "KEY NUMBERS",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Free fall from a height h: speed v = sqrt(2 × g × h) and time t = sqrt(2 × h / g). From 1,000 m, v = 140 m/s and t = 14.3 s."
+        },
+        {
+          "kind": "li",
+          "text": "Thrust-to-weight ratio: T / (m × g). With a ratio of 3, the engine gives 3 g of acceleration, and the net slowing acceleration is 2 g = 19.62 m/s²."
+        },
+        {
+          "kind": "li",
+          "text": "Stopping distance with full thrust: d = v² / (2 × a_net). From 140 m/s, with a_net = 19.62, d = 500 m. So the suicide burn starts at 500 m."
+        },
+        {
+          "kind": "li",
+          "text": "A soft landing (my rule): vertical speed below 2 m/s, tilt below 5°, sideways speed below 2 m/s, and within 5 m of the pad centre."
+        }
+      ]
+    },
+    {
+      "heading": "HAND-CHECKS (on paper, before any code)",
+      "items": [
+        {
+          "kind": "li",
+          "n": 1,
+          "text": "Free fall. From 1,000 m: v = 140.07 m/s and t = 14.28 s."
+        },
+        {
+          "kind": "li",
+          "n": 2,
+          "text": "Stopping distance. With thrust-to-weight 3 and v = 140 m/s: d = 500 m."
+        },
+        {
+          "kind": "li",
+          "n": 3,
+          "text": "Burn time. t_burn = v / a_net = 140 / 19.62 = 7.1 s."
+        },
+        {
+          "kind": "li",
+          "n": 4,
+          "text": "Fuel cost. Mass flow = thrust / ve. I check that 7.1 s of burn fits in my fuel."
+        },
+        {
+          "kind": "li",
+          "n": 5,
+          "text": "Landing rule. Write down the soft-landing numbers above as the pass/fail test."
+        }
+      ]
+    },
+    {
+      "heading": "BUILD STAGES (tick a stage only when its \"Done when\" is true; commit after every tick)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Stage 1: The world, no pilot. A rocket starts at 1,000 m and falls with no engine. Draw it with Matplotlib. Done when: it hits the ground at 14.3 s with a speed of 140 m/s (hand-check 1)."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 2: Add the engine. Thrust, mass loss and the tilt. Reuse my step_RK4. Done when: a constant 3 g thrust makes the rocket go up, and fuel runs out at the expected time."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 3: Draw the flight live. An animation (Matplotlib FuncAnimation) with the rocket as a rectangle, a flame when the engine is on, and a pad. Done when: I can watch a flight and see speed, height and fuel on screen."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 4: Hand-written pilot 1 (vertical only). Free fall, then full thrust at the height from hand-check 2. Done when: the rocket lands softly from 1,000 m in a straight drop."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 5: Hand-written pilot 2 (PD controller). A controller that sets the thrust to follow a target speed that shrinks with height. Done when: it lands softly from 10 different starting heights and speeds, and I print the success rate."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 6: Add tilt and sideways motion. Start 100 m off to the side with a small tilt. A second PD controller steers the tilt using the gimbal. Done when: the rocket lands on the pad with the soft-landing rule, from 20 random starts."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 7: Wrap it as a Gymnasium environment. reset() puts the rocket at a random start. step(action) moves it by one small time step and returns the observation, the reward, and whether the episode is over. Done when: a random pilot runs for many episodes without errors, and gymnasium's environment checker passes."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 8: Design the reward. A small reward for getting closer to the pad and slowing down, a big reward for a soft landing, a big penalty for a crash, and a tiny penalty for fuel. Done when: my hand-written pilot from Stage 6 scores much higher than the random pilot, so the reward makes sense."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 9: Train the agent. Use Stable-Baselines3 and the PPO algorithm. Plot the average reward against training steps. Done when: the learning curve rises, and the trained agent lands softly in more than 80% of 100 test landings."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 10: Watch it learn. Record a short video at three moments: before training, halfway, and after training. Done when: I have a side-by-side clip showing the agent crashing, then wobbling, then landing."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 11: Compare. Hand-written PD pilot against the learning agent, on the same 200 random starts. Table: success rate, average fuel used, average landing speed. Done when: I have the table and one honest sentence about which pilot wins and why."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 12: Make it harder. Add wind, or a random engine failure, or a smaller pad. Done when: I see how each pilot copes, and the table is updated."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 13: Link to Project 3. Use the final speed and height of my launch simulation as the start of a landing, if I choose. Optional."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 14: Write up. Hero GIF, the learning curve, the comparison table, and an honest list of what is simplified. Done when: a friend can run it from my README alone."
+        }
+      ]
+    },
+    {
+      "heading": "TRAPS (warn me when we reach each one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Reward hacking. The agent may find a trick, for example hovering forever to collect small rewards. Add a time limit and a fuel penalty."
+        },
+        {
+          "kind": "li",
+          "text": "Reward scale. If the crash penalty is much larger than everything else, the agent learns nothing. Keep rewards in a similar range."
+        },
+        {
+          "kind": "li",
+          "text": "Observation scale. Divide heights and speeds by typical values so the numbers the agent sees are near -1 to 1."
+        },
+        {
+          "kind": "li",
+          "text": "The time step. Use a fixed small step (for example 0.02 s) and do not change it between training and testing."
+        },
+        {
+          "kind": "li",
+          "text": "Randomness. Set seeds, so I can repeat a result. Train with several seeds and report the average, not the best run."
+        },
+        {
+          "kind": "li",
+          "text": "Angles. Use radians inside the code. Wrap the tilt angle to the range -π to π."
+        },
+        {
+          "kind": "li",
+          "text": "Overfitting to one start. Always test the agent on starts it never saw during training."
+        }
+      ]
+    },
+    {
+      "heading": "WATCH FIRST (videos)",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Search YouTube for: \"Nicholas Renotte reinforcement learning Stable Baselines3 tutorial\", \"SpaceX Falcon 9 landing explained suicide burn\", \"Gymnasium LunarLander PPO\", \"Steve Brunton PID control explained\"."
+        }
+      ]
+    },
+    {
+      "heading": "FINISH CHECKLIST",
+      "items": [
+        {
+          "kind": "li",
+          "text": "The landing GIF and the learning curve in the README"
+        },
+        {
+          "kind": "li",
+          "text": "The comparison table: hand-written pilot against the learning agent"
+        },
+        {
+          "kind": "li",
+          "text": "The three checks: 140 m/s fall speed, the 500 m burn height, the 80% success rate"
+        },
+        {
+          "kind": "li",
+          "text": "A line saying what is simplified: 2D world, flat ground, constant gravity, no air, a simple engine"
+        },
+        {
+          "kind": "li",
+          "text": "Repo pinned on my GitHub profile"
+        }
+      ]
+    },
+    {
+      "heading": "PROFESSIONAL WORKFLOW (strict, from day one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "I use Windows and Git Bash."
+        },
+        {
+          "kind": "li",
+          "text": "One GitHub repo. Never commit straight to main. For each stage: create a branch (feature/stage-4-vertical-pilot), commit small and often, push, open a pull request with a short description and a screenshot of the result, review it with me, then merge. Tick the stage in the README checklist inside that PR."
+        },
+        {
+          "kind": "li",
+          "text": "Commit messages: Conventional Commits (feat:, fix:, docs:, test:, refactor:, chore:), short and in present tense."
+        },
+        {
+          "kind": "li",
+          "text": "One code style for the whole project: Ruff (lint + format) set up in Stage 1, PEP 8, 4 spaces, type hints on every function, snake_case for variables and functions, UPPER_SNAKE_CASE for constants, a virtual environment, and requirements.txt."
+        },
+        {
+          "kind": "li",
+          "text": "Comments: a short docstring on every function (what it does, inputs with units, output). Above each physics step, a one-line comment naming the formula. Explain WHY, not what."
+        },
+        {
+          "kind": "li",
+          "text": "Tests: pytest. Each hand-check becomes a test (free fall gives 140 m/s from 1,000 m, the burn height is 500 m, the soft-landing rule is correct, the environment passes the checker). A stage is only ticked when its test passes."
+        },
+        {
+          "kind": "li",
+          "text": "Folder structure: src/lander/ (rk4.py, world.py, pilots.py, env.py, train.py, plotting.py), tests/, docs/ (pictures, hand-checks), scripts/, models/ (git-ignored), README.md, .gitignore, pyproject.toml, requirements.txt."
+        },
+        {
+          "kind": "li",
+          "text": "Keep units clean. SI units in all code. Radians inside the code. Convert to degrees only for display."
+        }
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "1",
+      "title": "The world, no pilot",
+      "body": "A rocket starts at 1,000 m and falls with no engine. Draw it with Matplotlib.",
+      "doneWhen": "it hits the ground at 14.3 s with a speed of 140 m/s (hand-check 1)."
+    },
+    {
+      "id": "2",
+      "title": "Add the engine",
+      "body": "Thrust, mass loss and the tilt. Reuse my step_RK4.",
+      "doneWhen": "a constant 3 g thrust makes the rocket go up, and fuel runs out at the expected time."
+    },
+    {
+      "id": "3",
+      "title": "Draw the flight live",
+      "body": "An animation (Matplotlib FuncAnimation) with the rocket as a rectangle, a flame when the engine is on, and a pad.",
+      "doneWhen": "I can watch a flight and see speed, height and fuel on screen."
+    },
+    {
+      "id": "4",
+      "title": "Hand-written pilot 1 (vertical only)",
+      "body": "Free fall, then full thrust at the height from hand-check 2.",
+      "doneWhen": "the rocket lands softly from 1,000 m in a straight drop."
+    },
+    {
+      "id": "5",
+      "title": "Hand-written pilot 2 (PD controller)",
+      "body": "A controller that sets the thrust to follow a target speed that shrinks with height.",
+      "doneWhen": "it lands softly from 10 different starting heights and speeds, and I print the success rate."
+    },
+    {
+      "id": "6",
+      "title": "Add tilt and sideways motion",
+      "body": "Start 100 m off to the side with a small tilt. A second PD controller steers the tilt using the gimbal.",
+      "doneWhen": "the rocket lands on the pad with the soft-landing rule, from 20 random starts."
+    },
+    {
+      "id": "7",
+      "title": "Wrap it as a Gymnasium environment",
+      "body": "reset() puts the rocket at a random start. step(action) moves it by one small time step and returns the observation, the reward, and whether the episode is over.",
+      "doneWhen": "a random pilot runs for many episodes without errors, and gymnasium's environment checker passes."
+    },
+    {
+      "id": "8",
+      "title": "Design the reward",
+      "body": "A small reward for getting closer to the pad and slowing down, a big reward for a soft landing, a big penalty for a crash, and a tiny penalty for fuel.",
+      "doneWhen": "my hand-written pilot from Stage 6 scores much higher than the random pilot, so the reward makes sense."
+    },
+    {
+      "id": "9",
+      "title": "Train the agent",
+      "body": "Use Stable-Baselines3 and the PPO algorithm. Plot the average reward against training steps.",
+      "doneWhen": "the learning curve rises, and the trained agent lands softly in more than 80% of 100 test landings."
+    },
+    {
+      "id": "10",
+      "title": "Watch it learn",
+      "body": "Record a short video at three moments: before training, halfway, and after training.",
+      "doneWhen": "I have a side-by-side clip showing the agent crashing, then wobbling, then landing."
+    },
+    {
+      "id": "11",
+      "title": "Compare",
+      "body": "Hand-written PD pilot against the learning agent, on the same 200 random starts. Table: success rate, average fuel used, average landing speed.",
+      "doneWhen": "I have the table and one honest sentence about which pilot wins and why."
+    },
+    {
+      "id": "12",
+      "title": "Make it harder",
+      "body": "Add wind, or a random engine failure, or a smaller pad.",
+      "doneWhen": "I see how each pilot copes, and the table is updated."
+    },
+    {
+      "id": "13",
+      "title": "Link to Project 3",
+      "body": "Use the final speed and height of my launch simulation as the start of a landing, if I choose. Optional.",
+      "doneWhen": null
+    },
+    {
+      "id": "14",
+      "title": "Write up",
+      "body": "Hero GIF, the learning curve, the comparison table, and an honest list of what is simplified.",
+      "doneWhen": "a friend can run it from my README alone."
+    }
+  ],
+  "speech": {
+    "overview": "Build a simple rocket landing world, then teach a computer pilot to land the rocket softly on a pad. First I write a pilot by hand with physics. Then I let a reinforcement learning agent learn to do it by trial and error. At the end I compare the two. Do one stage at a time. Ignore later stages until the current one is ticked. A landing rocket falls, and the pilot can switch the engine on to slow down. Burn too early and the rocket runs out of fuel or goes back up. Burn too late and it crashes. The perfect plan is to fall freely, then burn at exactly the right height, so the speed reaches zero right at the ground (the suicide burn). A learning agent has no physics knowledge. It tries thousands of landings, gets a reward for a soft landing and a penalty for a crash, and slowly learns the same idea.",
+    "stage.1": "Stage 1: The world, no pilot. A rocket starts at 1,000 m and falls with no engine. Draw it with Matplotlib. Done when: it hits the ground at 14.3 s with a speed of 140 m/s (hand-check 1).",
+    "stage.2": "Stage 2: Add the engine. Thrust, mass loss and the tilt. Reuse my step_RK4. Done when: a constant 3 g thrust makes the rocket go up, and fuel runs out at the expected time.",
+    "stage.3": "Stage 3: Draw the flight live. An animation (Matplotlib FuncAnimation) with the rocket as a rectangle, a flame when the engine is on, and a pad. Done when: I can watch a flight and see speed, height and fuel on screen.",
+    "stage.4": "Stage 4: Hand-written pilot 1 (vertical only). Free fall, then full thrust at the height from hand-check 2. Done when: the rocket lands softly from 1,000 m in a straight drop.",
+    "stage.5": "Stage 5: Hand-written pilot 2 (PD controller). A controller that sets the thrust to follow a target speed that shrinks with height. Done when: it lands softly from 10 different starting heights and speeds, and I print the success rate.",
+    "stage.6": "Stage 6: Add tilt and sideways motion. Start 100 m off to the side with a small tilt. A second PD controller steers the tilt using the gimbal. Done when: the rocket lands on the pad with the soft-landing rule, from 20 random starts.",
+    "stage.7": "Stage 7: Wrap it as a Gymnasium environment. reset() puts the rocket at a random start. step(action) moves it by one small time step and returns the observation, the reward, and whether the episode is over. Done when: a random pilot runs for many episodes without errors, and gymnasium's environment checker passes.",
+    "stage.8": "Stage 8: Design the reward. A small reward for getting closer to the pad and slowing down, a big reward for a soft landing, a big penalty for a crash, and a tiny penalty for fuel. Done when: my hand-written pilot from Stage 6 scores much higher than the random pilot, so the reward makes sense.",
+    "stage.9": "Stage 9: Train the agent. Use Stable-Baselines3 and the PPO algorithm. Plot the average reward against training steps. Done when: the learning curve rises, and the trained agent lands softly in more than 80% of 100 test landings.",
+    "stage.10": "Stage 10: Watch it learn. Record a short video at three moments: before training, halfway, and after training. Done when: I have a side-by-side clip showing the agent crashing, then wobbling, then landing.",
+    "stage.11": "Stage 11: Compare. Hand-written PD pilot against the learning agent, on the same 200 random starts. Table: success rate, average fuel used, average landing speed. Done when: I have the table and one honest sentence about which pilot wins and why.",
+    "stage.12": "Stage 12: Make it harder. Add wind, or a random engine failure, or a smaller pad. Done when: I see how each pilot copes, and the table is updated.",
+    "stage.13": "Stage 13: Link to Project 3. Use the final speed and height of my launch simulation as the start of a landing, if I choose. Optional.",
+    "stage.14": "Stage 14: Write up. Hero GIF, the learning curve, the comparison table, and an honest list of what is simplified. Done when: a friend can run it from my README alone."
+  }
+}

@@ -1,0 +1,130 @@
+# Project 1: 3D Slingshot Game
+
+Oct 29, 2026 · @Stephane
+
+## Start here
+
+You build a 3D solar system where you aim a probe, launch it past a moving planet, and steal the planet's speed to reach a target. Do Stage 1 only. Ignore everything below it until Stage 1 is ticked.
+
+### The idea in plain words
+
+A probe is a tiny object. The sun and a planet pull on it. If the probe passes just behind a moving planet, the planet drags it along and it leaves faster than it arrived. That is how Voyager reached the outer planets without carrying huge fuel tanks.
+
+You write the physics, prove it is right, then wrap a 3D game around it.
+
+### What to understand first
+
+- **A 3D position is three numbers (x, y, z).** Velocity and acceleration are also three numbers each. Your 2D code becomes 3D by adding one more number everywhere.
+
+- **Each body pulls the probe toward itself.** The pull is G × mass ÷ distance², pointing straight at the body. Add up the pulls from every body.
+
+- **The probe is so light that it does not move the sun or the planet.** So the planet can be "on rails": a circle it follows at constant speed. This is a simplification, and your README should say so.
+
+- **The slingshot is a trick of viewpoint.** Seen from the planet, the probe arrives at some speed and leaves at the same speed, only turned. Seen from the sun, the planet moves, so turning the probe changes its speed.
+
+The pull on the probe, summed over all bodies i:
+
+\vec a = \sum_i \frac{G\\ M_i\\ (\vec r_i - \vec r)}{\|\vec r_i - \vec r\|^{3}}
+
+r is the probe's position, r_i is body i's position, M_i is its mass. The distance is cubed because one factor makes the strength fall as 1 ÷ distance², and the other turns the arrow (r_i − r) into a direction of length 1.
+
+### Hand-check 1: the best-case slingshot (on paper, before any code)
+
+1.  Sun's view: the planet moves at +1 along x. The probe moves at −1 along x, so its speed is 1.
+
+2.  Planet's view: the probe arrives at speed 2, heading −x.
+
+3.  A perfect flyby turns it all the way round. It leaves at speed 2, heading +x.
+
+4.  Back to the sun's view: add the planet's +1. The probe leaves at speed 3.
+
+Speed went from 1 to 3, a gain of 2, twice the planet's speed. Your game will gain less, because it will not turn the probe all the way round.
+
+### Hand-check 2: how far the planet turns the probe
+
+The turn angle δ, where r_p is the closest distance to the planet, v is the probe's speed relative to the planet far away, and m is the planet's mass:
+
+\sin\frac{\delta}{2} = \frac{1}{1 + \dfrac{r_p\\ v^{2}}{G\\ m}}
+
+I ran this on my own computer with the sun switched off and planet mass 0.05. Your simulation should land within about 2° of these:
+
+| Speed far away (v) | Closest distance (r_p) | Turn angle |
+|--------------------|------------------------|------------|
+| 0.4                | 0.121                  | about 92°  |
+| 0.6                | 0.192                  | about 50°  |
+| 0.6                | 0.382                  | about 31°  |
+
+### Starting numbers (toy units)
+
+| Thing                  | Value               | Why                                                     |
+|------------------------|---------------------|---------------------------------------------------------|
+| G                      | 1                   | Keeps the numbers small                                 |
+| Sun mass, position     | 1, at the origin    | The centre of everything                                |
+| Planet orbit radius    | 5                   | Far enough from the sun                                 |
+| Planet speed           | 0.447               | Circular speed = square root of (G × sun mass ÷ radius) |
+| One planet orbit takes | about 70 time units | 2π × 5 ÷ 0.447                                          |
+| Planet mass            | 0.05                | Heavy enough to bend the probe visibly                  |
+| Time step              | 0.01                | RK4 handles this easily                                 |
+| Launch speed cap       | about 0.8           | Stops players firing straight at the target             |
+
+These are starting points. Tune them once everything works.
+
+## Build stages
+
+Tick a stage only when its "Done when" is true. Commit after every tick.
+
+- [ ] **Stage 1: Make the physics 3D, no drawing.** The probe has six numbers: x, y, z and three velocities. Write one function that gives the probe's acceleration from a list of bodies. Hand-check: a probe at (5, 0, 0) with only the sun has acceleration 1 × 1 ÷ 25 = 0.04, pointing toward the sun. **Done when:** the acceleration matches 0.04, and a probe at (5, 0, 0) with speed 0.447 along y keeps its distance from the sun at 5 (within 0.001) for one full orbit of 70 time units.
+
+- [ ] **Stage 2: Tilt the orbit.** Give the probe some speed along z as well. **Done when:** the distance stays constant, and the three numbers of (position × velocity), called the cross product, never change. That is conserved angular momentum.
+
+- [ ] **Stage 3: Add the planet on rails.** Its position at time t is a circle of radius 5, with angle = (0.447 ÷ 5) × t. Add its pull to the probe's acceleration. **Done when:** a probe held at rest 0.5 away from the planet feels a planet pull of 0.05 ÷ 0.25 = 0.2.
+
+- [ ] **Stage 4: Test a flyby with the sun switched off.** Fix the planet in place. Fire the probe past it from far away. **Done when:** the probe's speed is the same before and after the pass, at equal distances from the planet (within 1%), and the turn angle matches the table in hand-check 2.
+
+- [ ] **Stage 5: Test the speed gain.** Still with the sun off, let the planet move in a straight line at constant velocity. Fly the same pass. **Done when:** the probe's final velocity matches this recipe within 2%: take the probe's velocity minus the planet's velocity, turn it by the angle you measured, then add the planet's velocity back.
+
+- [ ] **Stage 6: Make it visible in 3D.** Draw spheres for the sun, planet and probe, a line tracing the probe's path, and a camera you can spin with the mouse. **Done when:** the path looks right from every angle.
+
+- [ ] **Stage 7: Aim and launch.** Show an arrow from the probe's start. Let the player change its direction and strength, then press a key to launch. Add pause and fast-forward. **Done when:** ten launches in a row all run smoothly.
+
+- [ ] **Stage 8: Add a target and crash rules.** A glowing target sphere. The run is won when the probe passes within a set distance. It is lost if the probe touches the sun or planet, or after a maximum time. **Done when:** you can win and lose on purpose.
+
+- [ ] **Stage 9: Add an info panel.** Show speed, distance to the sun, and distance to the planet. After the flyby, show the speed gained, and draw a small graph of speed over time. **Done when:** the panel's gain matches your Stage 5 number.
+
+- [ ] **Stage 10: Run the trust test.** Halve the time step and replay the same launch. **Done when:** the final position changes by less than 1%.
+
+- [ ] **Stage 11: Build three levels.** Easy: the planet is in the way. Medium: two planets. Hard: the target is far out and only a slingshot can reach it. **Done when:** a maximum-speed direct shot cannot win the hard level.
+
+- [ ] **Stage 12: Record and write up.** A 60 to 90 second screen recording, then the README. **Done when:** a friend can run it from your README alone.
+
+## Traps, videos, finish line
+
+### Traps
+
+- **The planet moves during a step.** RK4 looks at four moments: the start (k1), the middle (k2 and k3) and the end (k4). The planet must be at its position for that moment each time. Using the start position for all four makes the pull wrong.
+
+- **A very close pass makes the pull huge.** Stop the run if the probe gets closer than 0.05 to the planet, or use a smaller time step near it.
+
+- **Don't put camera code inside the physics.** Keep physics.py free of drawing, as you did in Integrators.
+
+- **Mixing the two viewpoints.** Always write down whether a velocity is in the sun's view or the planet's view.
+
+### Watch first
+
+Search YouTube for: "gravity assist explained", "Ursina engine beginner tutorial", "3D vectors and cross product intuition".
+
+### Set up
+
+Use Ursina for the 3D window. If it will not install, use VPython. Make a fresh virtual environment and keep .venv in your .gitignore.
+
+### Finish checklist
+
+- [ ] Hand-checks 1 and 2 in the README, with your measured numbers beside them
+
+- [ ] The time-step halving result in the README
+
+- [ ] A screen recording of a successful slingshot on the hard level
+
+- [ ] A line saying what is simplified: planet on rails, the probe has no effect on the planet
+
+- [ ] Repo pinned on your GitHub profile

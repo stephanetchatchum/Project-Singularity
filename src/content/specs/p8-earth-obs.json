@@ -1,0 +1,356 @@
+{
+  "projectId": "p8-earth-obs",
+  "sources": ["P8_Earth_Observation_Pipeline__source_labelled_Project5.md"],
+  "sections": [
+    {
+      "heading": "GOAL",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Build a small, clean pipeline that finds real Sentinel-2 satellite images of a place in Rwanda, downloads only the pixels I need, removes clouds, computes vegetation health (NDVI) over time, and shows it as maps and a time-series chart. It runs in Docker and has tests. This is the same kind of work done at Development Seed, Sinergise, GeoVille and Acre Insights, so I can show it in interviews."
+        }
+      ]
+    },
+    {
+      "heading": "THE IDEA IN PLAIN WORDS",
+      "items": [
+        {
+          "kind": "p",
+          "text": "A satellite photographs the Earth in many colours, including colours my eyes cannot see. Healthy plants reflect a lot of near-infrared light and absorb red light. So comparing the two tells me how green and healthy a place is. The number is NDVI. I do this for many dates, and I get a film of how the land changes through the seasons."
+        }
+      ]
+    },
+    {
+      "heading": "THE BIG SIMPLIFICATION",
+      "items": [
+        {
+          "kind": "p",
+          "text": "One small area (about 10 km × 10 km), 10 m pixels, one satellite (Sentinel-2 L2A, which is already corrected for the atmosphere), and only a few bands: blue, green, red, near-infrared and the scene classification (SCL) band for clouds. No machine learning in v1."
+        }
+      ]
+    },
+    {
+      "heading": "KEY NUMBERS",
+      "items": [
+        {
+          "kind": "li",
+          "text": "NDVI = (NIR - Red) / (NIR + Red). It lies between -1 and 1. Water is below 0, bare soil is near 0.1, healthy plants are 0.6 to 0.9."
+        },
+        {
+          "kind": "li",
+          "text": "Sentinel-2 bands at 10 m: B02 blue, B03 green, B04 red, B08 near-infrared. SCL is at 20 m."
+        },
+        {
+          "kind": "li",
+          "text": "Sentinel-2 revisits a place about every 5 days (with both satellites)."
+        },
+        {
+          "kind": "li",
+          "text": "A 10 km × 10 km area at 10 m is 1,000 × 1,000 pixels."
+        }
+      ]
+    },
+    {
+      "heading": "HAND-CHECKS (on paper, before any code)",
+      "items": [
+        {
+          "kind": "li",
+          "n": 1,
+          "text": "NDVI by hand. NIR = 0.5 and Red = 0.1 give (0.5 - 0.1) / (0.5 + 0.1) = 0.667."
+        },
+        {
+          "kind": "li",
+          "n": 2,
+          "text": "NDVI of water. NIR = 0.02 and Red = 0.04 give a negative number. Check the sign."
+        },
+        {
+          "kind": "li",
+          "n": 3,
+          "text": "Pixel count. A 10 km × 10 km area at 10 m gives 1,000 × 1,000 = 1,000,000 pixels. At 2 bytes each, that is 2 MB per band per date."
+        },
+        {
+          "kind": "li",
+          "n": 4,
+          "text": "Cloud cover. If 30% of the pixels are cloud, how many valid pixels remain?"
+        },
+        {
+          "kind": "li",
+          "n": 5,
+          "text": "Coordinates. One degree of latitude is about 111 km. Check that my area in degrees matches 10 km."
+        }
+      ]
+    },
+    {
+      "heading": "BUILD STAGES (tick a stage only when its \"Done when\" is true; commit after every tick)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Stage 1: Set up and look at a satellite image. Create the repo, a virtual environment, and install the libraries (pystac-client, odc-stac or stackstac, rasterio, xarray, rioxarray, matplotlib, geopandas). Find one Sentinel-2 image of my area from a free public STAC catalogue (Earth Search on AWS, or Microsoft Planetary Computer), and plot it in true colour. Done when: I see a real picture of Rwanda on my screen."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 2: Search properly. Write a function that asks the catalogue for all images of my area for a date range with less than 20% cloud. Print how many I get and the dates. Done when: I get a list of dates, and the count matches the catalogue's website within 1 or 2 images."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 3: Load only what I need. Load the four bands for my area into an xarray array without downloading whole tiles. Done when: the array has the right shape (time, y, x) and I plot one band."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 4: Compute NDVI. Write a small function with NumPy. Done when: a test with NIR = 0.5 and Red = 0.1 gives 0.667, and the NDVI map shows forests and fields clearly different from towns and water."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 5: Remove clouds. Use the SCL band to mask cloud, cloud shadow and snow. Done when: cloudy pixels are blank in the map, and the percent of valid pixels is printed for each date."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 6: The time series. Compute the average NDVI of my area for every date, and plot it as a line. Add a median composite, to get one clean picture from many dates. Done when: the chart shows the seasons (the dry and wet seasons of Rwanda) as a visible wave."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 7: A change map. Pick two dates (for example, dry season and wet season, or one year apart) and plot the NDVI difference. Done when: I see which places got greener and which got browner, with a colour bar and a legend."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 8: Make it cloud-native. Save the result as Zarr (chunked and compressed), and reload it. Compare the file size and the load time against GeoTIFF. Done when: I have a small table with both numbers. Optional: try the ESA EOPF Zarr samples I saw in the EOPF 101 course."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 9: Turn it into a command-line tool. One command takes the place, the date range and an output folder. Done when: I can run `python -m eopipe run --lat ... --lon ... --start ... --end ...` and get all the pictures."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 10: Add tests. pytest for NDVI, the cloud mask and the date search (with a saved sample so the tests do not need the internet). Done when: all tests pass, and the NDVI test matches hand-check 1."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 11: Docker. Write a Dockerfile so the whole pipeline runs with one command on any computer. Done when: a friend can run `docker run ...` and get the same pictures."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 12: Continuous integration. A GitHub Actions workflow that runs Ruff and pytest on every pull request. Done when: the green check appears on my pull request."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 13: A small interactive map. Show the NDVI layer on a web map (folium or leafmap), saved as one HTML file. Done when: I can open it in a browser and slide between dates."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 14: Write up. Hero image (the change map), the time-series chart, the checks, the file-size table and an honest list of what is simplified. Done when: a friend can run it from my README alone."
+        }
+      ]
+    },
+    {
+      "heading": "TRAPS (warn me when we reach each one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Scaling. Sentinel-2 numbers are stored as integers with a scale (divide by 10,000 to get reflectance, and watch for the offset in newer data). Wrong scaling gives wrong NDVI."
+        },
+        {
+          "kind": "li",
+          "text": "Division by zero. NIR + Red can be 0. Handle it, and do not let NaN spread silently."
+        },
+        {
+          "kind": "li",
+          "text": "Coordinate systems. The images use a projected system (UTM, in metres), and my area is in degrees (WGS84). Use the right one when cutting out my area."
+        },
+        {
+          "kind": "li",
+          "text": "Clouds are not only \"cloud\". Shadows and thin haze fool NDVI. Use the SCL classes, and look at the picture."
+        },
+        {
+          "kind": "li",
+          "text": "Different dates, different shapes. Make sure all dates share the same grid before I average them."
+        },
+        {
+          "kind": "li",
+          "text": "Memory. Do not load everything at once. Use chunks (dask) and look at the sizes first."
+        },
+        {
+          "kind": "li",
+          "text": "The internet. Keep a small saved sample for tests and for working offline."
+        }
+      ]
+    },
+    {
+      "heading": "WATCH FIRST (videos)",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Search YouTube for: \"Sentinel-2 NDVI explained\", \"STAC explained Radiant Earth\", \"xarray tutorial Earth observation Python\", \"Cloud Native Geospatial Zarr explained\", \"EOPF 101 Development Seed\"."
+        }
+      ]
+    },
+    {
+      "heading": "FINISH CHECKLIST",
+      "items": [
+        {
+          "kind": "li",
+          "text": "The change map, the time-series chart and the interactive map in the README"
+        },
+        {
+          "kind": "li",
+          "text": "The NDVI hand-check next to my result"
+        },
+        {
+          "kind": "li",
+          "text": "The Zarr against GeoTIFF table (size and load time)"
+        },
+        {
+          "kind": "li",
+          "text": "A green GitHub Actions badge and a working Dockerfile"
+        },
+        {
+          "kind": "li",
+          "text": "A line saying what is simplified: one place, one satellite, no machine learning, simple cloud mask"
+        },
+        {
+          "kind": "li",
+          "text": "Repo pinned on my GitHub profile"
+        }
+      ]
+    },
+    {
+      "heading": "PROFESSIONAL WORKFLOW (strict, from day one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "I use Windows and Git Bash."
+        },
+        {
+          "kind": "li",
+          "text": "One GitHub repo. Never commit straight to main. For each stage: create a branch (feature/stage-4-ndvi), commit small and often, push, open a pull request with a short description and a screenshot of the result, review it with me, then merge. Tick the stage in the README checklist inside that PR."
+        },
+        {
+          "kind": "li",
+          "text": "Commit messages: Conventional Commits (feat:, fix:, docs:, test:, refactor:, chore:), short and in present tense."
+        },
+        {
+          "kind": "li",
+          "text": "One code style for the whole project: Ruff (lint + format) set up in Stage 1, PEP 8, 4 spaces, type hints on every function, snake_case for variables and functions, UPPER_SNAKE_CASE for constants, a virtual environment, and requirements.txt."
+        },
+        {
+          "kind": "li",
+          "text": "Comments: a short docstring on every function (what it does, inputs with units, output). Explain WHY, not what."
+        },
+        {
+          "kind": "li",
+          "text": "Tests: pytest. Each hand-check becomes a test. A stage is only ticked when its test passes."
+        },
+        {
+          "kind": "li",
+          "text": "Folder structure: src/eopipe/ (search.py, load.py, indices.py, mask.py, plots.py, cli.py), tests/, data/ (git-ignored, with a tiny sample), docs/ (pictures), scripts/, Dockerfile, .github/workflows/, README.md, .gitignore, pyproject.toml, requirements.txt."
+        },
+        {
+          "kind": "li",
+          "text": "Keep units clean. Reflectance between 0 and 1. Coordinates: say clearly which system each variable uses."
+        }
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "1",
+      "title": "Set up and look at a satellite image",
+      "body": "Create the repo, a virtual environment, and install the libraries (pystac-client, odc-stac or stackstac, rasterio, xarray, rioxarray, matplotlib, geopandas). Find one Sentinel-2 image of my area from a free public STAC catalogue (Earth Search on AWS, or Microsoft Planetary Computer), and plot it in true colour.",
+      "doneWhen": "I see a real picture of Rwanda on my screen."
+    },
+    {
+      "id": "2",
+      "title": "Search properly",
+      "body": "Write a function that asks the catalogue for all images of my area for a date range with less than 20% cloud. Print how many I get and the dates.",
+      "doneWhen": "I get a list of dates, and the count matches the catalogue's website within 1 or 2 images."
+    },
+    {
+      "id": "3",
+      "title": "Load only what I need",
+      "body": "Load the four bands for my area into an xarray array without downloading whole tiles.",
+      "doneWhen": "the array has the right shape (time, y, x) and I plot one band."
+    },
+    {
+      "id": "4",
+      "title": "Compute NDVI",
+      "body": "Write a small function with NumPy.",
+      "doneWhen": "a test with NIR = 0.5 and Red = 0.1 gives 0.667, and the NDVI map shows forests and fields clearly different from towns and water."
+    },
+    {
+      "id": "5",
+      "title": "Remove clouds",
+      "body": "Use the SCL band to mask cloud, cloud shadow and snow.",
+      "doneWhen": "cloudy pixels are blank in the map, and the percent of valid pixels is printed for each date."
+    },
+    {
+      "id": "6",
+      "title": "The time series",
+      "body": "Compute the average NDVI of my area for every date, and plot it as a line. Add a median composite, to get one clean picture from many dates.",
+      "doneWhen": "the chart shows the seasons (the dry and wet seasons of Rwanda) as a visible wave."
+    },
+    {
+      "id": "7",
+      "title": "A change map",
+      "body": "Pick two dates (for example, dry season and wet season, or one year apart) and plot the NDVI difference.",
+      "doneWhen": "I see which places got greener and which got browner, with a colour bar and a legend."
+    },
+    {
+      "id": "8",
+      "title": "Make it cloud-native",
+      "body": "Save the result as Zarr (chunked and compressed), and reload it. Compare the file size and the load time against GeoTIFF.",
+      "doneWhen": "I have a small table with both numbers. Optional: try the ESA EOPF Zarr samples I saw in the EOPF 101 course."
+    },
+    {
+      "id": "9",
+      "title": "Turn it into a command-line tool",
+      "body": "One command takes the place, the date range and an output folder.",
+      "doneWhen": "I can run `python -m eopipe run --lat ... --lon ... --start ... --end ...` and get all the pictures."
+    },
+    {
+      "id": "10",
+      "title": "Add tests",
+      "body": "pytest for NDVI, the cloud mask and the date search (with a saved sample so the tests do not need the internet).",
+      "doneWhen": "all tests pass, and the NDVI test matches hand-check 1."
+    },
+    {
+      "id": "11",
+      "title": "Docker",
+      "body": "Write a Dockerfile so the whole pipeline runs with one command on any computer.",
+      "doneWhen": "a friend can run `docker run ...` and get the same pictures."
+    },
+    {
+      "id": "12",
+      "title": "Continuous integration",
+      "body": "A GitHub Actions workflow that runs Ruff and pytest on every pull request.",
+      "doneWhen": "the green check appears on my pull request."
+    },
+    {
+      "id": "13",
+      "title": "A small interactive map",
+      "body": "Show the NDVI layer on a web map (folium or leafmap), saved as one HTML file.",
+      "doneWhen": "I can open it in a browser and slide between dates."
+    },
+    {
+      "id": "14",
+      "title": "Write up",
+      "body": "Hero image (the change map), the time-series chart, the checks, the file-size table and an honest list of what is simplified.",
+      "doneWhen": "a friend can run it from my README alone."
+    }
+  ],
+  "speech": {
+    "overview": "Build a small, clean pipeline that finds real Sentinel-2 satellite images of a place in Rwanda, downloads only the pixels I need, removes clouds, computes vegetation health (NDVI) over time, and shows it as maps and a time-series chart. It runs in Docker and has tests. This is the same kind of work done at Development Seed, Sinergise, GeoVille and Acre Insights, so I can show it in interviews. A satellite photographs the Earth in many colours, including colours my eyes cannot see. Healthy plants reflect a lot of near-infrared light and absorb red light. So comparing the two tells me how green and healthy a place is. The number is NDVI. I do this for many dates, and I get a film of how the land changes through the seasons.",
+    "stage.1": "Stage 1: Set up and look at a satellite image. Create the repo, a virtual environment, and install the libraries (pystac-client, odc-stac or stackstac, rasterio, xarray, rioxarray, matplotlib, geopandas). Find one Sentinel-2 image of my area from a free public STAC catalogue (Earth Search on AWS, or Microsoft Planetary Computer), and plot it in true colour. Done when: I see a real picture of Rwanda on my screen.",
+    "stage.2": "Stage 2: Search properly. Write a function that asks the catalogue for all images of my area for a date range with less than 20% cloud. Print how many I get and the dates. Done when: I get a list of dates, and the count matches the catalogue's website within 1 or 2 images.",
+    "stage.3": "Stage 3: Load only what I need. Load the four bands for my area into an xarray array without downloading whole tiles. Done when: the array has the right shape (time, y, x) and I plot one band.",
+    "stage.4": "Stage 4: Compute NDVI. Write a small function with NumPy. Done when: a test with NIR = 0.5 and Red = 0.1 gives 0.667, and the NDVI map shows forests and fields clearly different from towns and water.",
+    "stage.5": "Stage 5: Remove clouds. Use the SCL band to mask cloud, cloud shadow and snow. Done when: cloudy pixels are blank in the map, and the percent of valid pixels is printed for each date.",
+    "stage.6": "Stage 6: The time series. Compute the average NDVI of my area for every date, and plot it as a line. Add a median composite, to get one clean picture from many dates. Done when: the chart shows the seasons (the dry and wet seasons of Rwanda) as a visible wave.",
+    "stage.7": "Stage 7: A change map. Pick two dates (for example, dry season and wet season, or one year apart) and plot the NDVI difference. Done when: I see which places got greener and which got browner, with a colour bar and a legend.",
+    "stage.8": "Stage 8: Make it cloud-native. Save the result as Zarr (chunked and compressed), and reload it. Compare the file size and the load time against GeoTIFF. Done when: I have a small table with both numbers. Optional: try the ESA EOPF Zarr samples I saw in the EOPF 101 course.",
+    "stage.9": "Stage 9: Turn it into a command-line tool. One command takes the place, the date range and an output folder. Done when: I can run `python -m eopipe run --lat ... --lon ... --start ... --end ...` and get all the pictures.",
+    "stage.10": "Stage 10: Add tests. pytest for NDVI, the cloud mask and the date search (with a saved sample so the tests do not need the internet). Done when: all tests pass, and the NDVI test matches hand-check 1.",
+    "stage.11": "Stage 11: Docker. Write a Dockerfile so the whole pipeline runs with one command on any computer. Done when: a friend can run `docker run ...` and get the same pictures.",
+    "stage.12": "Stage 12: Continuous integration. A GitHub Actions workflow that runs Ruff and pytest on every pull request. Done when: the green check appears on my pull request.",
+    "stage.13": "Stage 13: A small interactive map. Show the NDVI layer on a web map (folium or leafmap), saved as one HTML file. Done when: I can open it in a browser and slide between dates.",
+    "stage.14": "Stage 14: Write up. Hero image (the change map), the time-series chart, the checks, the file-size table and an honest list of what is simplified. Done when: a friend can run it from my README alone."
+  }
+}
