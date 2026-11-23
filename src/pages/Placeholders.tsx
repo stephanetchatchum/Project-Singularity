@@ -1,14 +1,5 @@
 import { EmptyState } from "../components/EmptyState";
 
-export function Studio() {
-  return (
-    <EmptyState eyebrow="Learning studio" title="Listen, watch, try." milestone="M1">
-      Press play and a tutor explains one idea while the demonstration moves in sync. Then you do a
-      small task yourself.
-    </EmptyState>
-  );
-}
-
 export function Lab() {
   return (
     <EmptyState eyebrow="Experiment lab" title="Change a number. See what happens." milestone="M4">

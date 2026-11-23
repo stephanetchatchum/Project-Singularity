@@ -1,0 +1,462 @@
+/* Links that act as buttons */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-1);
+  background: var(--bg-3);
+  white-space: nowrap;
+}
+.button.primary {
+  background: var(--signal);
+  color: #03221b;
+  border-color: transparent;
+  font-weight: 600;
+}
+.button.primary:hover {
+  background: #84f0d6;
+}
+.start-btn {
+  padding: 12px 22px;
+  font-size: 16px;
+  align-self: center;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+}
+.icon-btn.big {
+  width: 68px;
+  height: 68px;
+}
+.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ok-text {
+  color: var(--done);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.warn-text {
+  color: var(--explain);
+}
+
+/* Lesson layout */
+.lesson-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.badge-validated {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--signal);
+  background: var(--signal-dim);
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: help;
+}
+.mode-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  align-self: flex-start;
+}
+.mode-switch button {
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.mode-switch button[aria-selected="true"] {
+  background: var(--bg-3);
+  color: var(--ink-1);
+}
+.lesson-grid,
+.activity {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.page > .lesson {
+  max-width: 1240px;
+}
+.stage {
+  position: relative;
+  padding: 10px;
+  overflow: hidden;
+}
+.scene,
+.graph {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.graph {
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+.scene-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.readout {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.readout-k {
+  fill: var(--ink-3);
+}
+.axis-label {
+  fill: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.big-play {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 22px 34px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-1) 80%, transparent);
+  backdrop-filter: blur(8px);
+  border-color: rgba(95, 227, 196, 0.4);
+  font-size: 17px;
+}
+.big-play svg {
+  color: var(--signal);
+}
+.big-play small {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+/* Equation with narrated term highlighting */
+.eq-panel {
+  min-height: 92px;
+  display: grid;
+  place-items: center;
+}
+.equation {
+  font-size: 1.25rem;
+  color: var(--ink-1);
+}
+.equation .katex-display {
+  margin: 0;
+}
+.equation [class*="term-"] {
+  transition:
+    color 0.25s,
+    background 0.25s;
+  border-radius: 4px;
+}
+.equation .term-on {
+  color: var(--explain);
+  background: var(--explain-dim);
+  box-shadow: 0 0 0 3px var(--explain-dim);
+}
+
+/* Caption with spoken-word highlighting */
+.caption {
+  position: relative;
+  padding: 16px 18px 26px;
+  border-radius: var(--radius);
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.caption-ghost {
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.caption-now {
+  font-size: 18px;
+  line-height: 1.5;
+}
+.w-dim {
+  color: var(--ink-3);
+  transition: color 0.12s;
+}
+.w-lit {
+  color: var(--ink-1);
+  transition: color 0.12s;
+}
+.caption-count {
+  position: absolute;
+  right: 12px;
+  bottom: 6px;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.sections {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.section-chip {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: transparent;
+}
+.section-chip.current {
+  border-color: var(--explain);
+  color: var(--explain);
+}
+.next-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+}
+
+/* Activity */
+.b-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 8px 4px;
+}
+.b-control input[type="range"] {
+  flex: 1;
+  min-width: 160px;
+  accent-color: var(--signal);
+}
+.b-readout {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+.option.right {
+  border-color: var(--done);
+  color: var(--done);
+}
+.option.wrong {
+  border-color: var(--explain);
+  color: var(--explain);
+}
+.hint {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  color: var(--ink-2);
+}
+.hint svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--explain);
+}
+.num-input {
+  font: inherit;
+  width: 130px;
+  color: var(--ink-1);
+  background: var(--bg-1);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+.done-panel {
+  border-color: rgba(127, 216, 143, 0.35);
+}
+.lesson-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lesson-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Mini-player */
+.mp-buttons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.mp-title {
+  text-decoration: none;
+  color: var(--ink-1);
+  min-width: 0;
+}
+.mp-lesson {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mp-track {
+  flex: 1;
+  display: flex;
+  gap: 3px;
+  min-width: 80px;
+  max-width: 460px;
+  margin-left: auto;
+}
+.mp-seg {
+  flex: 1;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: var(--line-strong);
+  position: relative;
+  overflow: hidden;
+}
+.mp-seg:hover {
+  background: rgba(220, 235, 255, 0.3);
+}
+.mp-seg.past {
+  background: var(--signal);
+}
+.mp-seg.now::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: calc(var(--p, 0) * 100%);
+  background: var(--explain);
+}
+.mp-narrator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.mp-rate {
+  padding: 4px 6px;
+  font-size: 12px;
+}
+
+/* Listening mode */
+.listening {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: radial-gradient(ellipse at 50% 30%, #0f1a1a, var(--bg-0) 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 40px;
+  text-align: center;
+}
+.listening-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+.listening .caption {
+  background: transparent;
+  border: none;
+  max-width: 760px;
+}
+.caption-large .caption-now,
+p.caption-large {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3.2vw, 34px);
+  line-height: 1.35;
+  max-width: 760px;
+}
+.listening-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.listening-orb {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--signal) calc(var(--p) * 360deg), var(--line-strong) 0);
+  mask: radial-gradient(circle, transparent 50px, #000 51px);
+  position: relative;
+}
+.orb-core {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--explain);
+  opacity: 0.4;
+}
+.orb-core.on {
+  opacity: 1;
+  animation: breathe 2.6s ease-in-out infinite;
+}
+@keyframes breathe {
+  50% {
+    transform: scale(1.6);
+  }
+}
+
+@media (max-width: 900px) {
+  .lesson-grid,
+  .activity {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mp-narrator {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .mp-track,
+  .mp-rate {
+    display: none;
+  }
+}
