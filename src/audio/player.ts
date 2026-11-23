@@ -20,8 +20,10 @@ export interface PlayerState {
   status: PlayerStatus;
   rate: number;
   narrator: Pick<Narrator, "kind" | "label" | "needsInternet"> | null;
-  /** A one-off line (hint, feedback, recap) currently being spoken. */
+  /** A one-off line (hint, feedback, recap, spec stage) currently being spoken. */
   aside: Line | null;
+  /** Where the aside comes from, shown in the mini-player (e.g. "P2 · Stage 3"). */
+  asideLabel: string | null;
 }
 
 export const RATES = [0.75, 0.9, 1, 1.15, 1.3, 1.5] as const;
@@ -34,12 +36,16 @@ const INITIAL: PlayerState = {
   rate: 1,
   narrator: null,
   aside: null,
+  asideLabel: null,
 };
 
 class LessonPlayer {
   private state: PlayerState = INITIAL;
   private listeners = new Set<() => void>();
   private narrator: Narrator | null = null;
+  /** Narrators for reading outside lessons (spec pages), one per scope. */
+  private readers = new Map<string, Promise<Narrator>>();
+  private reading: Narrator | null = null;
   /** Increments on every interruption so stale loops stop themselves. */
   private run = 0;
 
@@ -133,6 +139,31 @@ class LessonPlayer {
     return result;
   }
 
+  /**
+   * Read a line from outside the current lesson (e.g. a spec stage). `scope`
+   * picks the recorded clips folder: narration/<scope>/.
+   */
+  async read(scope: string, line: Line, label: string): Promise<SpeakResult> {
+    if (!this.readers.has(scope)) this.readers.set(scope, chooseNarrator(scope));
+    const narrator = await this.readers.get(scope)!;
+    this.stopSound();
+    const myRun = this.run;
+    if (this.state.status === "playing") this.set({ status: "paused", progress: 0 });
+    this.reading = narrator;
+    this.set({ aside: line, asideLabel: label });
+    const result = await narrator.speak(line, this.state.rate, () => {});
+    if (this.run !== myRun) return "stopped";
+    this.reading = null;
+    this.set({ aside: null, asideLabel: null });
+    return result;
+  }
+
+  /** Stop whatever is speaking. */
+  stop() {
+    this.stopSound();
+    if (this.state.status === "playing") this.set({ status: "paused", progress: 0 });
+  }
+
   /** Speak several lines in order; stops early if anything interrupts. */
   async sayAll(lines: Line[]): Promise<void> {
     for (const line of lines) if ((await this.say(line)) === "stopped") return;
@@ -148,7 +179,9 @@ class LessonPlayer {
   private stopSound() {
     this.run++;
     this.narrator?.stop();
-    if (this.state.aside) this.set({ aside: null });
+    this.reading?.stop();
+    this.reading = null;
+    if (this.state.aside) this.set({ aside: null, asideLabel: null });
   }
 
   private async playFrom(start: number) {
