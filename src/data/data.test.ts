@@ -42,6 +42,29 @@ describe("first-run database", () => {
   });
 });
 
+describe("stage progress seed", () => {
+  it("records only what Stephane reported, nothing more", async () => {
+    const db = new AcademyDB(`test-${Math.random()}`);
+    const rows = await db.stageState.toArray();
+    const p1 = rows.filter((r) => r.projectId === "p1-slingshot");
+    expect(p1).toHaveLength(12);
+    expect(p1.every((r) => r.status === "done")).toBe(true);
+    const p5 = Object.fromEntries(
+      rows.filter((r) => r.projectId === "p5-em-field").map((r) => [r.stageId, r.status]),
+    );
+    expect(p5).toEqual({
+      "1": "done",
+      "2": "done",
+      "3": "done",
+      "4": "in-progress",
+      "4.1": "done",
+    });
+    expect(rows.every((r) => r.statusSource === "user-reported")).toBe(true);
+    expect(rows.some((r) => !["p1-slingshot", "p5-em-field"].includes(r.projectId))).toBe(false);
+    await db.delete();
+  });
+});
+
 describe("spec issues", () => {
   it("keeps the P3 and P4 issues open until Stephane decides", () => {
     expect(SPEC_ISSUES.map((i) => [i.id, i.status])).toEqual([
@@ -61,5 +84,29 @@ describe("spec issues", () => {
     const h = 1000 / 3;
     expect(h).toBeCloseTo(333.3, 1);
     expect(Math.sqrt(2 * 9.81 * 500)).toBeCloseTo(99.0, 0);
+  });
+});
+
+describe("upgrade from the M1 database", () => {
+  it("adds the reported stage progress for existing installs", async () => {
+    const { default: Dexie } = await import("dexie");
+    const name = `upgrade-${Math.random()}`;
+    const old = new Dexie(name);
+    old
+      .version(2)
+      .stores({
+        projectState: "id, status",
+        meta: "key",
+        lessonRuns: "++id, lessonId, finishedAt",
+      });
+    await old
+      .table("lessonRuns")
+      .add({ lessonId: "p2-light-flat-space", finishedAt: 1, narrator: "x", tasks: [] });
+    old.close();
+
+    const db = new AcademyDB(name);
+    expect(await db.stageState.count()).toBe(17);
+    expect(await db.lessonRuns.count()).toBe(1); // nothing lost
+    await db.delete();
   });
 });
