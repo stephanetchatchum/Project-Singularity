@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Audio validation
+scripts/audio-validation/.venv/
+scripts/audio-validation/out/
