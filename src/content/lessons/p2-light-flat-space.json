@@ -1,0 +1,139 @@
+{
+  "id": "p2-light-flat-space",
+  "projectId": "p2-black-hole",
+  "title": "Light in flat space",
+  "prepares": "P2 · Stage 1",
+  "minutes": 4,
+  "demoKind": "validated",
+  "demoNote": "The moving ray and the u curve come from your own equation, solved with RK4 in the browser, and checked against the exact answer u = sin(φ) ÷ b.",
+  "beats": [
+    {
+      "id": "b1",
+      "section": "The idea",
+      "text": "Before we bend any light, let's watch it travel straight, with no black hole at all.",
+      "scene": { "show": ["centre", "ray"] }
+    },
+    {
+      "id": "b2",
+      "section": "The idea",
+      "text": "This ray passes a centre point. The closest it ever gets is a distance called b, the impact parameter.",
+      "scene": {
+        "show": ["centre", "ray", "b", "photon"],
+        "photon": { "from": 1.5708, "to": 1.5708 },
+        "focus": "b"
+      }
+    },
+    {
+      "id": "b3",
+      "section": "Tracking the light",
+      "text": "As the light moves, we track r, its distance from the centre, and phi, the angle it has swept around.",
+      "scene": {
+        "show": ["centre", "ray", "b", "photon", "r", "phi"],
+        "photon": { "from": 0.3, "to": 1.2 },
+        "focus": "phi"
+      }
+    },
+    {
+      "id": "b4",
+      "section": "Tracking the light",
+      "text": "Instead of r, we use u, which is one divided by r. Far away, r is huge, so u is almost zero.",
+      "speech": "Instead of r, we use u, which is one divided by r. Far away, r is huge, so u is almost zero.",
+      "scene": {
+        "show": ["centre", "ray", "photon", "r", "phi", "readouts"],
+        "photon": { "from": 0.3, "to": 0.3 },
+        "focus": "r"
+      },
+      "equation": {
+        "tex": "\\htmlClass{term-u}{u} = \\frac{1}{\\htmlClass{term-r}{r}}",
+        "highlight": ["term-u", "term-r"]
+      }
+    },
+    {
+      "id": "b5",
+      "section": "The rule",
+      "text": "In flat space, u follows one simple rule: u equals the sine of phi, divided by b.",
+      "scene": {
+        "show": ["centre", "ray", "b", "photon", "r", "phi", "readouts", "graph"],
+        "photon": { "from": 0.3, "to": 0.3 },
+        "focus": "b"
+      },
+      "equation": {
+        "tex": "\\htmlClass{term-u}{u} = \\frac{\\htmlClass{term-sin}{\\sin\\varphi}}{\\htmlClass{term-b}{b}}",
+        "highlight": ["term-sin", "term-b"]
+      }
+    },
+    {
+      "id": "b6",
+      "section": "The rule",
+      "text": "Watch the graph. u starts at zero, rises to its peak at the closest point, and falls back to zero when phi reaches pi.",
+      "scene": {
+        "show": ["centre", "ray", "b", "photon", "r", "phi", "readouts", "graph"],
+        "photon": { "from": 0.05, "to": 3.1416 },
+        "focus": "graph"
+      },
+      "equation": {
+        "tex": "\\htmlClass{term-u}{u} = \\frac{\\htmlClass{term-sin}{\\sin\\varphi}}{\\htmlClass{term-b}{b}}",
+        "highlight": ["term-u"]
+      }
+    },
+    {
+      "id": "b7",
+      "section": "Why it matters",
+      "text": "That return to zero at phi equals pi is exactly your Stage 1 check. In Stage 2, one extra term will bend this line.",
+      "scene": {
+        "show": ["centre", "ray", "b", "photon", "phi", "readouts", "graph"],
+        "photon": { "from": 3.1416, "to": 3.1416 },
+        "focus": "phi"
+      },
+      "equation": {
+        "tex": "\\frac{d^2\\htmlClass{term-u}{u}}{d\\varphi^2} = -\\htmlClass{term-u}{u} \\htmlClass{term-bend}{\\;+\\;3u^2}",
+        "highlight": ["term-bend"]
+      }
+    }
+  ],
+  "explore": {
+    "prompt": "Drag b. Watch the ray and the peak of the u curve.",
+    "bMin": 3,
+    "bMax": 20,
+    "bStart": 10
+  },
+  "tasks": [
+    {
+      "kind": "choice",
+      "id": "t1",
+      "prompt": "If b doubles, what happens to the peak of u?",
+      "options": [
+        { "id": "double", "text": "It doubles" },
+        { "id": "half", "text": "It halves" },
+        { "id": "same", "text": "It stays the same" }
+      ],
+      "correct": "half",
+      "hints": [
+        "Drag b from 5 to 10 and watch the top of the curve.",
+        "The peak is where sine phi equals one. So the peak is one divided by b."
+      ],
+      "why": {
+        "double": "Not quite. A bigger b means the ray passes further away, so r is bigger and u, one over r, gets smaller.",
+        "same": "Not quite. The peak is one divided by b, so it depends on b. Try dragging b and watch the top of the curve."
+      },
+      "explain": "Right. The peak is one divided by b. Double b and the ray passes twice as far away, so u at its peak is half as big."
+    },
+    {
+      "kind": "number",
+      "id": "t2",
+      "prompt": "At what angle φ does the ray leave again, with u back to 0?",
+      "unit": "rad",
+      "check": "flat-escape-angle",
+      "tolerance": 0.01,
+      "hints": [
+        "Look at the graph. Where does the curve touch zero again?",
+        "Sine is zero at phi equals zero, and at one more angle before two pi.",
+        "It is pi, about 3.14."
+      ],
+      "tooLow": "Not yet. At that angle the ray is still passing by, so u is not back to zero. Look further along the graph.",
+      "tooHigh": "Too far. The ray has already left before that angle. Look where the curve first touches zero again.",
+      "explain": "Right. The ray leaves at phi equals pi. Your RK4 run lands there too. That is the Stage 1 check."
+    }
+  ],
+  "recap": "So: b is the closest approach. u is one over r. And in flat space, u equals sine phi over b, returning to zero at phi equals pi."
+}

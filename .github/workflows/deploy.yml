@@ -1,0 +1,75 @@
+# Builds the academy, records lesson narration with Kokoro, and publishes it to
+# GitHub Pages. Runs on every push to main. Nothing needs installing locally.
+name: Deploy academy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kokoro uses espeak-ng for unusual words.
+      - name: Install espeak-ng
+        run: sudo apt-get update -q && sudo apt-get install -y -q espeak-ng
+
+      # The Kokoro model (~330 MB) is downloaded once, then reused from cache.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: kokoro-model-v1
+
+      - name: Install Kokoro (CPU only)
+        run: |
+          pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --quiet -r scripts/audio-validation/requirements.txt
+
+      - name: Record lesson narration
+        run: |
+          for f in src/content/lessons/*.json; do
+            python scripts/narration/generate_narration.py "$(basename "$f" .json)" --voice af_heart
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+
+      # The site lives at /<repo-name>/ on GitHub Pages.
+      - name: Build
+        run: npm run build -- --base=/${{ github.event.repository.name }}/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

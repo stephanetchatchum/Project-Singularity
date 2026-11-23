@@ -20,15 +20,28 @@ export interface MetaEntry {
   value: unknown;
 }
 
+/** One finished lesson session, with how each task went. */
+export interface LessonRun {
+  id?: number;
+  lessonId: string;
+  finishedAt: number;
+  narrator: string;
+  tasks: { id: string; attempts: number; hints: number; solved: boolean }[];
+}
+
 export class AcademyDB extends Dexie {
   projectState!: EntityTable<ProjectState, "id">;
   meta!: EntityTable<MetaEntry, "key">;
+  lessonRuns!: EntityTable<LessonRun, "id">;
 
   constructor(name = "computational-science-academy") {
     super(name);
     this.version(1).stores({
       projectState: "id, status",
       meta: "key",
+    });
+    this.version(2).stores({
+      lessonRuns: "++id, lessonId, finishedAt",
     });
     // Runs once, the first time the database is created on this device.
     this.on("populate", (tx) => {
