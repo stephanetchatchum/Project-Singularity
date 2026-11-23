@@ -460,3 +460,239 @@ p.caption-large {
     display: none;
   }
 }
+
+/* Project library */
+.project-row.linked {
+  position: relative;
+  transition: border-color 0.15s;
+}
+.project-row.linked:hover {
+  border-color: var(--line-strong);
+}
+.stretched {
+  color: inherit;
+  text-decoration: none;
+}
+.stretched::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+}
+.wrap {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.row-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.listen-btn {
+  font-size: 13px;
+  padding: 5px 11px;
+  border-radius: 999px;
+}
+.listen-btn.on {
+  border-color: var(--explain);
+  color: var(--explain);
+}
+.issue-note {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--explain-dim);
+  border: 1px solid rgba(255, 181, 71, 0.3);
+  color: var(--ink-1);
+}
+.issue-note > svg {
+  flex: none;
+  color: var(--explain);
+  margin-top: 2px;
+}
+.issue-flag {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--explain);
+}
+.issue-icon {
+  color: var(--explain);
+  margin-left: auto;
+}
+.progress-bar {
+  height: 4px;
+  background: var(--line-strong);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-bar > div {
+  height: 100%;
+  background: var(--done);
+}
+.roadmap {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.stage-row {
+  border-top: 1px solid var(--line);
+}
+.stage-row summary,
+.spec-section summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 2px;
+}
+.stage-row summary::-webkit-details-marker,
+.spec-section summary::-webkit-details-marker {
+  display: none;
+}
+.stage-dot {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-3);
+}
+.stage-dot.done {
+  background: var(--done);
+  border-color: var(--done);
+  color: #062b10;
+}
+.stage-dot.in-progress {
+  border-color: var(--progress);
+  color: var(--progress);
+}
+.stage-row.current .stage-dot.todo,
+.stage-row.current .stage-dot.in-progress {
+  border-color: var(--signal);
+  color: var(--signal);
+  box-shadow: 0 0 0 4px var(--signal-dim);
+}
+.stage-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+.stage-body {
+  padding: 0 0 16px 38px;
+  color: var(--ink-2);
+}
+.done-when {
+  color: var(--ink-1);
+  padding: 8px 12px;
+  border-left: 2px solid var(--signal);
+  background: var(--signal-dim);
+  border-radius: 0 6px 6px 0;
+}
+.steps {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.step {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink-1);
+}
+.step.done {
+  border-color: rgba(127, 216, 143, 0.3);
+}
+.step-fields {
+  margin: 6px 0 0;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.step-fields > div {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 8px;
+}
+.step-fields dt {
+  color: var(--ink-3);
+}
+.step-fields dd {
+  margin: 0;
+  color: var(--ink-2);
+}
+.spec-section {
+  padding: 4px 18px;
+}
+.spec-section[open] {
+  padding-bottom: 16px;
+}
+.chev {
+  color: var(--ink-3);
+  transition: transform 0.15s;
+}
+details[open] > summary .chev {
+  transform: rotate(90deg);
+}
+.spec-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ink-2);
+  padding-left: 28px;
+}
+.spec-list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.spec-math {
+  overflow-x: auto;
+}
+.spec-table-wrap {
+  overflow-x: auto;
+}
+.spec-table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.spec-table th,
+.spec-table td {
+  text-align: left;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.spec-table th {
+  color: var(--ink-1);
+  font-weight: 500;
+}
+@media (max-width: 640px) {
+  .stage-body,
+  .spec-items {
+    padding-left: 0;
+  }
+  .step-fields > div {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

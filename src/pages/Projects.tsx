@@ -1,4 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
+import { Link } from "react-router-dom";
 import { db } from "../data/db";
 import { PROJECTS } from "../data/projects";
 import { StatusChip } from "../components/StatusChip";
@@ -6,6 +7,11 @@ import { StatusChip } from "../components/StatusChip";
 /** Project library. Stage roadmaps (verbatim from the specs) arrive in M2. */
 export function Projects() {
   const states = useLiveQuery(() => db.projectState.toArray(), []);
+  const stageRows = useLiveQuery(() => db.stageState.toArray(), []);
+  const doneCount = (id: string) =>
+    (stageRows ?? []).filter(
+      (r) => r.projectId === id && r.status === "done" && !r.stageId.includes("."),
+    ).length;
   const byId = new Map((states ?? []).map((s) => [s.id, s]));
 
   return (
@@ -18,10 +24,14 @@ export function Projects() {
         {PROJECTS.map((p) => {
           const s = byId.get(p.id);
           return (
-            <li key={p.id} className="panel project-row">
+            <li key={p.id} className="panel project-row linked">
               <span className="project-num mono">{String(p.number).padStart(2, "0")}</span>
               <div className="stack-xs">
-                <h3>{p.title}</h3>
+                <h3>
+                  <Link to={`/projects/${p.id}`} className="stretched">
+                    {p.title}
+                  </Link>
+                </h3>
                 <p className="muted small">{p.goal}</p>
                 {s?.note && <p className="small note">{s.note}</p>}
                 <div className="tags">
@@ -35,7 +45,7 @@ export function Projects() {
               <div className="project-side">
                 {s && <StatusChip status={s.status} source={s.statusSource} />}
                 <span className="mono small muted">
-                  {p.stageCount} {p.stageUnit}s
+                  {doneCount(p.id)} / {p.stageCount} {p.stageUnit}s
                 </span>
               </div>
             </li>
