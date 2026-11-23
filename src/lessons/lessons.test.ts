@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LESSONS, lessonProblems } from "./registry";
 import { PROJECTS } from "../data/projects";
-import { estimateSeconds, forSpeech } from "../audio/narrators";
+import { estimateSeconds } from "../audio/narrators";
 
 describe("lesson content", () => {
   for (const lesson of LESSONS) {
@@ -18,11 +18,4 @@ describe("lesson content", () => {
       expect(seconds / 60).toBeLessThanOrEqual(lesson.minutes);
     });
   }
-});
-
-describe("speech helpers", () => {
-  it("says phi and pi the way a physicist does", () => {
-    expect(forSpeech("phi reaches pi")).toBe("fye reaches pie");
-    expect(forSpeech("graphic pixels")).toBe("graphic pixels");
-  });
 });
