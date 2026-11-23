@@ -157,15 +157,6 @@
   line-height: 1.3;
   font-size: 13px;
 }
-.mini-player-track {
-  flex: 1;
-  max-width: 420px;
-  margin-left: auto;
-  height: 2px;
-  background: var(--line-strong);
-  border-radius: 2px;
-}
-
 /* Chips, tags */
 .chip {
   display: inline-flex;

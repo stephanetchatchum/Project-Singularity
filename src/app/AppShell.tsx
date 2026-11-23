@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { MiniPlayer } from "../components/MiniPlayer";
 import { useOnline } from "../components/useOnline";
+import { ListeningMode } from "../components/ListeningMode";
+import { usePlayerKeys } from "../components/usePlayerKeys";
 
 interface NavItem {
   to: string;
@@ -30,6 +32,7 @@ const NAV: NavItem[] = [
 /** Persistent frame: nav rail, page area, and the always-present mini-player. */
 export function AppShell() {
   const online = useOnline();
+  usePlayerKeys();
   return (
     <div className="shell lab-backdrop">
       <nav className="rail" aria-label="Main">
@@ -60,6 +63,7 @@ export function AppShell() {
         <Outlet />
       </main>
       <MiniPlayer />
+      <ListeningMode />
     </div>
   );
 }
