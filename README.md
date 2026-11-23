@@ -37,7 +37,8 @@ src/
   data/       project catalogue, local database (IndexedDB via Dexie), spec issues
   audio/      narrators (recorded clips, browser voice, captions) and the lesson player
   lessons/    lesson format, registry, answer parsing
-  content/    lesson scripts as JSON (also read by the narration generator)
+  content/    lesson scripts and extracted specs as JSON (also read by the narration recorder)
+  specs/      spec loader; test proves every sentence matches the original
   scenes/     scientific visualizations (drawn only from science/ results)
   science/    pure, tested numerical code, separate from the UI
 docs/
@@ -45,14 +46,15 @@ docs/
   spec-issues.md  possible spec problems, awaiting Stephane's decision
 scripts/
   audio-validation/  Kokoro check for the Windows machine
-  narration/         records lesson clips with Kokoro
+  narration/         records lesson and spec clips with Kokoro (run by CI)
+  specs/             extracts docs/specs/* into src/content/specs/*.json
 ```
 
 ## Milestones
 
 - [x] M0 Shell: navigation, design system, local data, offline install, voice check
-- [ ] M1 One complete audio-visual lesson (in review)
-- [ ] M2 Project Library with verbatim specs
+- [x] M1 One complete audio-visual lesson
+- [ ] M2 Project Library with verbatim specs (in review)
 - [ ] M3 Dashboard, progress with evidence, notes, backups
 - [ ] M4 Experiment Lab
 - [ ] M5 Exercises and spaced review
