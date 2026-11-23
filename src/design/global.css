@@ -1,0 +1,181 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/fraunces";
+
+/* Design tokens: a dark computational-physics lab. */
+:root {
+  --bg-0: #07080a;
+  --bg-1: #0c0e11;
+  --bg-2: #12151a;
+  --bg-3: #181c22;
+  --line: rgba(220, 235, 255, 0.07);
+  --line-strong: rgba(220, 235, 255, 0.14);
+
+  --ink-1: #e8ecf1;
+  --ink-2: #a3acb8;
+  --ink-3: #6b7480;
+
+  /* Phosphor teal = interactive / "live". Amber = "being explained now". */
+  --signal: #5fe3c4;
+  --signal-dim: rgba(95, 227, 196, 0.12);
+  --explain: #ffb547;
+  --explain-dim: rgba(255, 181, 71, 0.14);
+  --done: #7fd88f;
+  --progress: #6aa8ff;
+  --planned: #6b7480;
+  --danger: #ff7a7a;
+
+  --font-ui: "Inter Variable", system-ui, sans-serif;
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --radius: 10px;
+  --rail-w: 76px;
+  --player-h: 64px;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg-0);
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Faint measurement grid, like graph paper under a lab bench. */
+.lab-backdrop {
+  background-color: var(--bg-0);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px),
+    radial-gradient(ellipse 80% 60% at 70% 0%, rgba(95, 227, 196, 0.06), transparent 70%);
+  background-size:
+    48px 48px,
+    48px 48px,
+    100% 100%;
+  background-position: -1px -1px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+h1 {
+  font-size: 34px;
+  line-height: 1.15;
+}
+h2 {
+  font-size: 22px;
+}
+h3 {
+  font-size: 17px;
+}
+
+p {
+  margin: 0;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "zero" 1;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.panel {
+  background: color-mix(in srgb, var(--bg-2) 82%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  backdrop-filter: blur(6px);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--bg-3);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+button:hover {
+  background: #1f242c;
+  border-color: rgba(220, 235, 255, 0.24);
+}
+button.primary {
+  background: var(--signal);
+  color: #03221b;
+  border-color: transparent;
+  font-weight: 600;
+}
+button.primary:hover {
+  background: #84f0d6;
+}
+
+select {
+  font: inherit;
+  color: var(--ink-1);
+  background: var(--bg-3);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+a {
+  color: var(--signal);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
