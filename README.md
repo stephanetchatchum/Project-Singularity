@@ -3,7 +3,17 @@
 A personal, offline-first, audio-visual learning environment for eight computational
 science projects. Listen → watch → experiment → try → feedback → repeat.
 
-## Run
+## Use it
+
+**Link:** https://stephanetchatchum.github.io/Project-Singularity/
+
+Open it once while online. After that it opens with no internet (lessons, audio,
+progress). Chrome or Edge can also install it as an app from the address bar.
+
+Every push to `main` re-records the lesson narration with Kokoro (on GitHub's
+servers) and republishes the site. See `.github/workflows/deploy.yml`.
+
+## Run locally (developers only)
 
 ```bash
 npm install
