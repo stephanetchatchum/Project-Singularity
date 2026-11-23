@@ -8,6 +8,11 @@
  */
 
 import { loadVoiceReport } from "./voiceCapabilities";
+import pronunciation from "../content/pronunciation.json";
+
+const RULES = pronunciation.rules.map(
+  ([pattern, say]) => [new RegExp(pattern, /^\\b/.test(pattern) ? "gi" : "g"), say] as const,
+);
 
 export interface Line {
   /** Stable key, used to find a recorded clip (e.g. "b3", "t1.hint.0"). */
@@ -33,12 +38,11 @@ export function estimateSeconds(text: string): number {
   return Math.max(1.2, words / 2.6 + 0.4);
 }
 
-/** Speech engines often say "phi" as "fee". Spell it the way a physicist says it. */
+/** Turn symbols into words a voice can say ("m/s²" → "metres per second squared"). */
 export function forSpeech(text: string): string {
-  return text
-    .replace(/\bphi\b/gi, "fye")
-    .replace(/φ/g, "fye")
-    .replace(/\bpi\b/gi, "pie");
+  let out = text;
+  for (const [re, say] of RULES) out = out.replace(re, say);
+  return out.replace(/\s+/g, " ").trim();
 }
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,400 @@
+{
+  "projectId": "p7-julia-pde",
+  "sources": ["P7_Julia_PDE_Neural_Surrogate.md"],
+  "sections": [
+    {
+      "heading": "GOAL",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Write solvers for the heat equation and the wave equation in Julia, check them against exact answers, make them fast, and animate them. Then use the solver to make thousands of examples, and train a small neural network (a surrogate) that predicts the answer instantly. This is the start of my long-term goal, a neural surrogate for a PDE simulator. Do one stage at a time. Ignore later stages until the current one is ticked."
+        }
+      ]
+    },
+    {
+      "heading": "THE IDEA IN PLAIN WORDS",
+      "items": [
+        {
+          "kind": "p",
+          "text": "A partial differential equation (PDE) describes how something changes in space and time. Heat spreads out and smooths. A wave travels and bounces. A computer cannot handle continuous space, so I put the world on a grid, replace derivatives by differences between neighbours, and step forward in time. A surrogate is a neural network that learned from many solver runs, so it can give a good answer in milliseconds instead of running the full solver."
+        }
+      ]
+    },
+    {
+      "heading": "THE BIG SIMPLIFICATION",
+      "items": [
+        {
+          "kind": "p",
+          "text": "First 1D, then 2D. Regular grids. Simple boundaries (the ends are held at zero, or the edges are fixed). Explicit time stepping. The surrogate learns one family of problems, for example \"heat spreading from a random starting shape\", not everything."
+        }
+      ]
+    },
+    {
+      "heading": "KEY EQUATIONS",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Heat: ∂u/∂t = α ∂²u/∂x² (1D), and ∂u/∂t = α (∂²u/∂x² + ∂²u/∂y²) (2D). u is the temperature, α the diffusivity."
+        },
+        {
+          "kind": "li",
+          "text": "Wave: ∂²u/∂t² = c² ∂²u/∂x². u is the height, c the wave speed."
+        },
+        {
+          "kind": "li",
+          "text": "Second derivative on a grid: ∂²u/∂x² ≈ (u[i+1] - 2 u[i] + u[i-1]) / dx²."
+        },
+        {
+          "kind": "li",
+          "text": "Explicit heat step: u_new[i] = u[i] + α dt (u[i+1] - 2 u[i] + u[i-1]) / dx²."
+        },
+        {
+          "kind": "li",
+          "text": "Stability of the heat step: dt ≤ dx² / (2α) in 1D, dt ≤ dx² / (4α) in 2D."
+        },
+        {
+          "kind": "li",
+          "text": "Stability of the wave step (the CFL condition): c dt / dx ≤ 1 in 1D."
+        }
+      ]
+    },
+    {
+      "heading": "EXACT ANSWERS TO CHECK AGAINST",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Heat in 1D on [0, 1], ends at zero, start u = sin(πx): u(x, t) = sin(πx) e^(-α π² t). With α = 0.1 and t = 1, the peak falls to e^(-0.987) = 0.373."
+        },
+        {
+          "kind": "li",
+          "text": "Wave in 1D on [0, 1], ends fixed, start u = sin(πx) at rest: u(x, t) = sin(πx) cos(π c t). After one full period, t = 2 / c, it returns to the start."
+        },
+        {
+          "kind": "li",
+          "text": "Heat in 2D: u = sin(πx) sin(πy), decay rate e^(-2 α π² t)."
+        }
+      ]
+    },
+    {
+      "heading": "HAND-CHECKS (on paper, before any code)",
+      "items": [
+        {
+          "kind": "li",
+          "n": 1,
+          "text": "The second difference. Take u = [0, 1, 4, 9, 16] (that is x²) with dx = 1. The second difference at the middle is 2. Check it by hand."
+        },
+        {
+          "kind": "li",
+          "n": 2,
+          "text": "Stability. α = 0.1 and dx = 0.02 give a maximum dt = 0.002 for the 1D heat step. Check it."
+        },
+        {
+          "kind": "li",
+          "n": 3,
+          "text": "The exact decay. α = 0.1, t = 1: peak = 0.373."
+        },
+        {
+          "kind": "li",
+          "n": 4,
+          "text": "CFL. c = 1, dx = 0.01. What is the largest dt for the wave?"
+        },
+        {
+          "kind": "li",
+          "n": 5,
+          "text": "Grid size. A 2D grid of 200 × 200 has how many points? How many time steps for t = 1 with dt = 0.00005?"
+        }
+      ]
+    },
+    {
+      "heading": "BUILD STAGES (tick a stage only when its \"Done when\" is true; commit after every tick)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Stage 1: Julia from zero. Install Julia and VS Code with the Julia extension. Run the REPL. Define a function, make an array, loop over it, and make a plot with Plots.jl. Compare each step to Python. Done when: I see a plot of sin(πx) made in Julia."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 2: The finite difference by hand. Compute the second difference of x² in Julia and compare with hand-check 1. Then do it for sin(x) and compare with -sin(x). Done when: the error shrinks by 4 times when I halve dx (second order)."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 3: The 1D heat solver. Write the explicit step in a loop. Plot the temperature at several times. Done when: the peak at t = 1 matches 0.373 within 0.5%, and the error plot against the exact answer is tiny."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 4: Break it on purpose. Choose dt above the stability limit. Watch it explode. Done when: I can show a picture of the stable and the unstable run side by side, and explain why in one sentence."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 5: Animate it. Heat from a hot spot in the middle, using Plots.jl animations (@animate) or Makie. Done when: I have a GIF of heat spreading."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 6: The 1D wave solver. Use the leapfrog scheme (needs the two previous time levels). Done when: after one period it returns to its start within 1%, and the CFL limit is verified by breaking it."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 7: Make it fast in Julia. Use broadcasting (the dot), views and in-place updates. Compare with a naive loop and with NumPy. Measure with @btime (BenchmarkTools). Done when: I print a table of Julia loop, Julia vectorised, and NumPy times for the same problem."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 8: The 2D heat solver. A 2D grid, with a hot spot, shown as a colour map and as a 3D surface. Done when: the 2D decay of sin(πx)sin(πy) matches the exact rate within 1%."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 9: The 2D wave. A drop in a pond, with ripples and reflections from the walls. Add a barrier with two slits for a wave interference picture. Done when: I have a GIF of ripples, and I can see interference behind the slits."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 10: Use all cores. Add multi-threading (Threads.@threads) to the 2D loops. Optional: try the GPU with CUDA.jl, if I have a GPU (or skip). Done when: I print a speedup table for 1, 2, 4 and all threads."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 11: Make the data. Run the 2D heat solver 5,000 times with random starting shapes (random blobs). Save the start and the result at t = 0.1 as arrays (HDF5 or NumPy files). Done when: I have a data set, and I plot 9 random examples."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 12: The surrogate in PyTorch. A small convolutional network (a small U-Net or a few convolution layers) that takes the start picture and predicts the result picture. Split the data into train, validation and test. Done when: the test error is printed, and I plot prediction, truth and error side by side."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 13: Compare solver and surrogate. Speed (solver time against network time) and error. Test on shapes the network has not seen, and on a different α. Done when: I have a table with speed and error, and one honest sentence about where the surrogate fails."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 14: A physics-aware extra (stretch). Add a loss term that punishes breaking the heat equation or the conservation of total heat. Done when: the error on unseen shapes improves, or I can explain why it did not."
+        },
+        {
+          "kind": "li",
+          "text": "Stage 15: Write up. Hero GIF, the exact-answer checks (0.373, the wave period, the 2D rate), the speed tables and the surrogate results, and an honest list of what is simplified. Done when: a friend can run it from my README alone."
+        }
+      ]
+    },
+    {
+      "heading": "TRAPS (warn me when we reach each one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "Julia counts from 1, Python counts from 0. A common source of off-by-one errors."
+        },
+        {
+          "kind": "li",
+          "text": "Julia stores arrays by column, Python (NumPy) by row. Loop over the first index fastest for speed."
+        },
+        {
+          "kind": "li",
+          "text": "Boundaries. Keep the end points fixed at zero, and update only the inside cells."
+        },
+        {
+          "kind": "li",
+          "text": "Copy against alias. In Julia, `b = a` makes a second name for the same array, not a copy. Use copy(a)."
+        },
+        {
+          "kind": "li",
+          "text": "Time. The first run in Julia is slow because it compiles. Measure the second run, with @btime."
+        },
+        {
+          "kind": "li",
+          "text": "Global variables. Code in the global scope is slow in Julia. Put the work inside functions."
+        },
+        {
+          "kind": "li",
+          "text": "Stability. A beautiful picture does not prove the solver is right. Always compare with the exact answer."
+        },
+        {
+          "kind": "li",
+          "text": "Data leakage. For the surrogate, test shapes must not appear in the training data, not even rotated copies."
+        },
+        {
+          "kind": "li",
+          "text": "Scale of the data. Normalise the inputs and outputs for the network, and remember to undo it when plotting."
+        }
+      ]
+    },
+    {
+      "heading": "WATCH FIRST (videos)",
+      "items": [
+        {
+          "kind": "p",
+          "text": "Search YouTube for: \"Julia for Python programmers\", \"Steve Brunton finite difference heat equation\", \"Steve Brunton physics informed neural networks\", \"Chris Rackauckas Julia scientific machine learning\", \"3Blue1Brown heat equation\"."
+        }
+      ]
+    },
+    {
+      "heading": "FINISH CHECKLIST",
+      "items": [
+        {
+          "kind": "li",
+          "text": "The heat GIF, the wave GIF and the slit-interference picture in the README"
+        },
+        {
+          "kind": "li",
+          "text": "The exact-answer checks: 0.373 for the heat peak, the wave period, the 2D decay rate"
+        },
+        {
+          "kind": "li",
+          "text": "The speed tables: Julia against NumPy, 1 thread against many, solver against surrogate"
+        },
+        {
+          "kind": "li",
+          "text": "The surrogate results: test error, and the unseen-shape failure case"
+        },
+        {
+          "kind": "li",
+          "text": "A line saying what is simplified: regular grid, simple boundaries, a small problem family"
+        },
+        {
+          "kind": "li",
+          "text": "Repo pinned on my GitHub profile"
+        }
+      ]
+    },
+    {
+      "heading": "PROFESSIONAL WORKFLOW (strict, from day one)",
+      "items": [
+        {
+          "kind": "li",
+          "text": "I use Windows and Git Bash."
+        },
+        {
+          "kind": "li",
+          "text": "One GitHub repo. Never commit straight to main. For each stage: create a branch (feature/stage-3-heat-1d), commit small and often, push, open a pull request with a short description and a screenshot of the result, review it with me, then merge. Tick the stage in the README checklist inside that PR."
+        },
+        {
+          "kind": "li",
+          "text": "Commit messages: Conventional Commits (feat:, fix:, docs:, test:, refactor:, chore:), short and in present tense."
+        },
+        {
+          "kind": "li",
+          "text": "Julia style: a Julia project with Project.toml (julia --project), functions in modules, clear names (snake_case for functions and variables, PascalCase for modules and types), type annotations where they help. Python style: Ruff, PEP 8, type hints, a virtual environment, requirements.txt."
+        },
+        {
+          "kind": "li",
+          "text": "Comments: a short docstring on every function (what it does, inputs with units, output). Above each numerical step, a one-line comment naming the formula. Explain WHY, not what."
+        },
+        {
+          "kind": "li",
+          "text": "Tests: Julia's Test standard library for the solver (every hand-check and exact answer becomes a test), and pytest for the surrogate code. A stage is only ticked when its test passes."
+        },
+        {
+          "kind": "li",
+          "text": "Folder structure: julia/ (src/, test/, Project.toml), python/ (surrogate/, tests/), data/ (git-ignored, with a tiny sample), docs/ (pictures, GIFs, hand-checks), scripts/, README.md, .gitignore."
+        },
+        {
+          "kind": "li",
+          "text": "Keep units clean. Say what the grid spacing and the time step mean, even when they are dimensionless."
+        }
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "1",
+      "title": "Julia from zero",
+      "body": "Install Julia and VS Code with the Julia extension. Run the REPL. Define a function, make an array, loop over it, and make a plot with Plots.jl. Compare each step to Python.",
+      "doneWhen": "I see a plot of sin(πx) made in Julia."
+    },
+    {
+      "id": "2",
+      "title": "The finite difference by hand",
+      "body": "Compute the second difference of x² in Julia and compare with hand-check 1. Then do it for sin(x) and compare with -sin(x).",
+      "doneWhen": "the error shrinks by 4 times when I halve dx (second order)."
+    },
+    {
+      "id": "3",
+      "title": "The 1D heat solver",
+      "body": "Write the explicit step in a loop. Plot the temperature at several times.",
+      "doneWhen": "the peak at t = 1 matches 0.373 within 0.5%, and the error plot against the exact answer is tiny."
+    },
+    {
+      "id": "4",
+      "title": "Break it on purpose",
+      "body": "Choose dt above the stability limit. Watch it explode.",
+      "doneWhen": "I can show a picture of the stable and the unstable run side by side, and explain why in one sentence."
+    },
+    {
+      "id": "5",
+      "title": "Animate it",
+      "body": "Heat from a hot spot in the middle, using Plots.jl animations (@animate) or Makie.",
+      "doneWhen": "I have a GIF of heat spreading."
+    },
+    {
+      "id": "6",
+      "title": "The 1D wave solver",
+      "body": "Use the leapfrog scheme (needs the two previous time levels).",
+      "doneWhen": "after one period it returns to its start within 1%, and the CFL limit is verified by breaking it."
+    },
+    {
+      "id": "7",
+      "title": "Make it fast in Julia",
+      "body": "Use broadcasting (the dot), views and in-place updates. Compare with a naive loop and with NumPy. Measure with @btime (BenchmarkTools).",
+      "doneWhen": "I print a table of Julia loop, Julia vectorised, and NumPy times for the same problem."
+    },
+    {
+      "id": "8",
+      "title": "The 2D heat solver",
+      "body": "A 2D grid, with a hot spot, shown as a colour map and as a 3D surface.",
+      "doneWhen": "the 2D decay of sin(πx)sin(πy) matches the exact rate within 1%."
+    },
+    {
+      "id": "9",
+      "title": "The 2D wave",
+      "body": "A drop in a pond, with ripples and reflections from the walls. Add a barrier with two slits for a wave interference picture.",
+      "doneWhen": "I have a GIF of ripples, and I can see interference behind the slits."
+    },
+    {
+      "id": "10",
+      "title": "Use all cores",
+      "body": "Add multi-threading (Threads.@threads) to the 2D loops. Optional: try the GPU with CUDA.jl, if I have a GPU (or skip).",
+      "doneWhen": "I print a speedup table for 1, 2, 4 and all threads."
+    },
+    {
+      "id": "11",
+      "title": "Make the data",
+      "body": "Run the 2D heat solver 5,000 times with random starting shapes (random blobs). Save the start and the result at t = 0.1 as arrays (HDF5 or NumPy files).",
+      "doneWhen": "I have a data set, and I plot 9 random examples."
+    },
+    {
+      "id": "12",
+      "title": "The surrogate in PyTorch",
+      "body": "A small convolutional network (a small U-Net or a few convolution layers) that takes the start picture and predicts the result picture. Split the data into train, validation and test.",
+      "doneWhen": "the test error is printed, and I plot prediction, truth and error side by side."
+    },
+    {
+      "id": "13",
+      "title": "Compare solver and surrogate",
+      "body": "Speed (solver time against network time) and error. Test on shapes the network has not seen, and on a different α.",
+      "doneWhen": "I have a table with speed and error, and one honest sentence about where the surrogate fails."
+    },
+    {
+      "id": "14",
+      "title": "A physics-aware extra (stretch)",
+      "body": "Add a loss term that punishes breaking the heat equation or the conservation of total heat.",
+      "doneWhen": "the error on unseen shapes improves, or I can explain why it did not."
+    },
+    {
+      "id": "15",
+      "title": "Write up",
+      "body": "Hero GIF, the exact-answer checks (0.373, the wave period, the 2D rate), the speed tables and the surrogate results, and an honest list of what is simplified.",
+      "doneWhen": "a friend can run it from my README alone."
+    }
+  ],
+  "speech": {
+    "overview": "Write solvers for the heat equation and the wave equation in Julia, check them against exact answers, make them fast, and animate them. Then use the solver to make thousands of examples, and train a small neural network (a surrogate) that predicts the answer instantly. This is the start of my long-term goal, a neural surrogate for a PDE simulator. Do one stage at a time. Ignore later stages until the current one is ticked. A partial differential equation (PDE) describes how something changes in space and time. Heat spreads out and smooths. A wave travels and bounces. A computer cannot handle continuous space, so I put the world on a grid, replace derivatives by differences between neighbours, and step forward in time. A surrogate is a neural network that learned from many solver runs, so it can give a good answer in milliseconds instead of running the full solver.",
+    "stage.1": "Stage 1: Julia from zero. Install Julia and VS Code with the Julia extension. Run the REPL. Define a function, make an array, loop over it, and make a plot with Plots.jl. Compare each step to Python. Done when: I see a plot of sin(πx) made in Julia.",
+    "stage.2": "Stage 2: The finite difference by hand. Compute the second difference of x² in Julia and compare with hand-check 1. Then do it for sin(x) and compare with -sin(x). Done when: the error shrinks by 4 times when I halve dx (second order).",
+    "stage.3": "Stage 3: The 1D heat solver. Write the explicit step in a loop. Plot the temperature at several times. Done when: the peak at t = 1 matches 0.373 within 0.5%, and the error plot against the exact answer is tiny.",
+    "stage.4": "Stage 4: Break it on purpose. Choose dt above the stability limit. Watch it explode. Done when: I can show a picture of the stable and the unstable run side by side, and explain why in one sentence.",
+    "stage.5": "Stage 5: Animate it. Heat from a hot spot in the middle, using Plots.jl animations (@animate) or Makie. Done when: I have a GIF of heat spreading.",
+    "stage.6": "Stage 6: The 1D wave solver. Use the leapfrog scheme (needs the two previous time levels). Done when: after one period it returns to its start within 1%, and the CFL limit is verified by breaking it.",
+    "stage.7": "Stage 7: Make it fast in Julia. Use broadcasting (the dot), views and in-place updates. Compare with a naive loop and with NumPy. Measure with @btime (BenchmarkTools). Done when: I print a table of Julia loop, Julia vectorised, and NumPy times for the same problem.",
+    "stage.8": "Stage 8: The 2D heat solver. A 2D grid, with a hot spot, shown as a colour map and as a 3D surface. Done when: the 2D decay of sin(πx)sin(πy) matches the exact rate within 1%.",
+    "stage.9": "Stage 9: The 2D wave. A drop in a pond, with ripples and reflections from the walls. Add a barrier with two slits for a wave interference picture. Done when: I have a GIF of ripples, and I can see interference behind the slits.",
+    "stage.10": "Stage 10: Use all cores. Add multi-threading (Threads.@threads) to the 2D loops. Optional: try the GPU with CUDA.jl, if I have a GPU (or skip). Done when: I print a speedup table for 1, 2, 4 and all threads.",
+    "stage.11": "Stage 11: Make the data. Run the 2D heat solver 5,000 times with random starting shapes (random blobs). Save the start and the result at t = 0.1 as arrays (HDF5 or NumPy files). Done when: I have a data set, and I plot 9 random examples.",
+    "stage.12": "Stage 12: The surrogate in PyTorch. A small convolutional network (a small U-Net or a few convolution layers) that takes the start picture and predicts the result picture. Split the data into train, validation and test. Done when: the test error is printed, and I plot prediction, truth and error side by side.",
+    "stage.13": "Stage 13: Compare solver and surrogate. Speed (solver time against network time) and error. Test on shapes the network has not seen, and on a different α. Done when: I have a table with speed and error, and one honest sentence about where the surrogate fails.",
+    "stage.14": "Stage 14: A physics-aware extra (stretch). Add a loss term that punishes breaking the heat equation or the conservation of total heat. Done when: the error on unseen shapes improves, or I can explain why it did not.",
+    "stage.15": "Stage 15: Write up. Hero GIF, the exact-answer checks (0.373, the wave period, the 2D rate), the speed tables and the surrogate results, and an honest list of what is simplified. Done when: a friend can run it from my README alone."
+  }
+}

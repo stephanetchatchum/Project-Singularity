@@ -1,5 +1,14 @@
 import { Link } from "react-router-dom";
-import { AudioLines, Pause, Play, SkipBack, SkipForward, Maximize2, WifiOff } from "lucide-react";
+import {
+  AudioLines,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  Maximize2,
+  WifiOff,
+  Square,
+} from "lucide-react";
 import { player, usePlayer, RATES } from "../audio/player";
 import { useListeningMode } from "./listeningStore";
 
@@ -7,6 +16,25 @@ import { useListeningMode } from "./listeningStore";
 export function MiniPlayer() {
   const s = usePlayer();
   const listening = useListeningMode();
+
+  // Reading a spec stage (or anything outside a lesson).
+  if (s.aside && s.asideLabel) {
+    return (
+      <footer className="mini-player" aria-label="Lesson player">
+        <button
+          className="icon-btn primary"
+          onClick={() => player.stop()}
+          aria-label="Stop reading"
+        >
+          <Square size={16} />
+        </button>
+        <div className="mini-player-text mp-title">
+          <span className="eyebrow">Reading · {s.asideLabel}</span>
+          <span className="mp-lesson">{s.aside.text}</span>
+        </div>
+      </footer>
+    );
+  }
 
   if (!s.lesson) {
     return (

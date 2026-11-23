@@ -41,11 +41,20 @@ jobs:
           pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
           pip install --quiet -r scripts/audio-validation/requirements.txt
 
-      - name: Record lesson narration
+      # Recordings are reused until a lesson, spec, pronunciation rule or the recorder changes.
+      - uses: actions/cache@v4
+        with:
+          path: public/narration
+          key: narration-${{ hashFiles('src/content/**/*.json', 'scripts/narration/*.py') }}
+
+      - name: Record narration (lessons and spec pages)
         run: |
-          for f in src/content/lessons/*.json; do
-            python scripts/narration/generate_narration.py "$(basename "$f" .json)" --voice af_heart
-          done
+          record() {  # $1 = target, $2 = output folder
+            if [ -f "public/narration/$2/manifest.json" ]; then echo "cached: $2"; return; fi
+            python scripts/narration/generate_narration.py "$1" --voice af_heart
+          }
+          for f in src/content/lessons/*.json; do n=$(basename "$f" .json); record "$n" "$n"; done
+          for f in src/content/specs/*.json; do n=$(basename "$f" .json); record "spec:$n" "spec-$n"; done
 
       - uses: actions/setup-node@v4
         with:

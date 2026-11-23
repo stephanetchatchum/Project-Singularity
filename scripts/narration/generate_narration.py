@@ -1,7 +1,8 @@
 """Record every spoken line of a lesson as audio clips, for offline playback.
 
-Reads  src/content/lessons/<lesson>.json
-Writes public/narration/<lesson>/<key>.ogg and manifest.json
+Reads  src/content/lessons/<lesson>.json          (target: <lesson id>)
+       src/content/specs/<project>.json          (target: spec:<project id>)
+Writes public/narration/<lesson or spec-project>/<key>.ogg and manifest.json
 
 Each clip is one sentence (one beat, hint, or feedback line). The app matches
 clips by key AND by exact text, so if a lesson's wording changes, the stale
@@ -29,6 +30,7 @@ import soundfile as sf
 
 ROOT = Path(__file__).resolve().parents[2]
 LESSON_DIR = ROOT / "src" / "content" / "lessons"
+SPEC_DIR = ROOT / "src" / "content" / "specs"
 OUT_ROOT = ROOT / "public" / "narration"
 SAMPLE_RATE_HZ = 24_000
 
@@ -47,10 +49,15 @@ def spoken_lines(lesson: dict) -> list[tuple[str, str]]:
     return lines
 
 
+RULES = json.loads((ROOT / "src" / "content" / "pronunciation.json").read_text(encoding="utf-8"))["rules"]
+
+
 def for_speech(text: str) -> str:
-    """Same pronunciation fixes as the app (narrators.ts forSpeech)."""
-    text = re.sub(r"\bphi\b", "fye", text, flags=re.IGNORECASE).replace("φ", "fye")
-    return re.sub(r"\bpi\b", "pie", text, flags=re.IGNORECASE)
+    """Same pronunciation rules as the app (src/content/pronunciation.json)."""
+    for pattern, say in RULES:
+        flags = re.IGNORECASE if pattern.startswith("\\b") else 0
+        text = re.sub(pattern, lambda _m, s=say: s, text, flags=flags)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 class KokoroEngine:
@@ -91,21 +98,29 @@ class EspeakEngine:
 def main() -> int:
     """Generate clips and manifest for one lesson. Returns an exit code."""
     ap = argparse.ArgumentParser()
-    ap.add_argument("lesson", help="lesson id, e.g. p2-light-flat-space")
+    ap.add_argument("target", help="lesson id (p2-light-flat-space) or spec:<project id>")
     ap.add_argument("--engine", choices=["kokoro", "espeak"], default="kokoro")
     ap.add_argument("--voice", default="af_heart")
     args = ap.parse_args()
 
-    lesson = json.loads((LESSON_DIR / f"{args.lesson}.json").read_text(encoding="utf-8"))
+    if args.target.startswith("spec:"):
+        pid = args.target[5:]
+        spec = json.loads((SPEC_DIR / f"{pid}.json").read_text(encoding="utf-8"))
+        lines = list(spec["speech"].items())
+        folder = f"spec-{pid}"
+    else:
+        lesson = json.loads((LESSON_DIR / f"{args.target}.json").read_text(encoding="utf-8"))
+        lines = spoken_lines(lesson)
+        folder = args.target
     engine = KokoroEngine(args.voice) if args.engine == "kokoro" else EspeakEngine(args.voice)
-    out = OUT_ROOT / args.lesson
+    out = OUT_ROOT / folder
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
 
     manifest = {"engine": engine.name, "voice": args.voice, "clips": {}}
     total_audio = total_gen = 0.0
-    for key, text in spoken_lines(lesson):
+    for key, text in lines:
         t0 = time.perf_counter()
         audio = engine.synth(for_speech(text))
         gen = time.perf_counter() - t0
