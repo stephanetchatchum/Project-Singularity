@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { loadVoiceReport, speakTest, type VoiceReport } from "../audio/voiceCapabilities";
 import { useOnline } from "../components/useOnline";
+import { ResetPanel } from "../components/ResetPanel";
 
 type Check = "yes" | "no" | "checking";
 
@@ -121,13 +122,15 @@ export function System() {
       <section className="panel stack-sm">
         <span className="eyebrow">Main narrator · Kokoro</span>
         <p className="small">
-          Lesson audio is recorded ahead of time with Kokoro on your own computer, then stored
-          inside the app. Status: <strong>not yet validated on your Windows machine.</strong>
+          Lesson and spec audio is recorded with Kokoro on GitHub&apos;s servers every time the app
+          updates, then stored inside the app, so it plays offline. Nothing to install.
         </p>
         <p className="muted small">
-          Run scripts/audio-validation/validate_kokoro.py (see its README).
+          If a sentence has no recording yet, the browser voice above reads it instead.
         </p>
       </section>
+
+      <ResetPanel />
     </div>
   );
 }

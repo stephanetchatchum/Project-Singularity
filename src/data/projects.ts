@@ -23,6 +23,7 @@ export interface ProjectMeta {
   /** The spec's own word for a step: "stage" or "phase". */
   stageUnit: "stage" | "phase";
   technologies: string[];
+  /** Everything starts at "planned": Stephane reset all progress on 2026-11-24. */
   initialStatus: ProjectStatus;
   /** Free-text progress note as reported by Stephane (not verified). */
   initialNote?: string;
@@ -39,7 +40,7 @@ export const PROJECTS: readonly ProjectMeta[] = [
     stageCount: 12,
     stageUnit: "stage",
     technologies: ["Python", "NumPy", "RK4", "Ursina"],
-    initialStatus: "completed",
+    initialStatus: "planned",
   },
   {
     id: "p2-black-hole",
@@ -87,8 +88,7 @@ export const PROJECTS: readonly ProjectMeta[] = [
     stageCount: 10,
     stageUnit: "phase",
     technologies: ["JavaScript", "Three.js", "Node.js", "Express", "SQLite", "JWT"],
-    initialStatus: "in-progress",
-    initialNote: "Phases 1–3 done. Phase 4 in progress: one field arrow on screen (step 4.1).",
+    initialStatus: "planned",
   },
   {
     id: "p6-fluid-cpp",

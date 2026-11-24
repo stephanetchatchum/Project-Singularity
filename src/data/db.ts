@@ -61,6 +61,18 @@ export class AcademyDB extends Dexie {
       .stores({ stageState: "key, projectId" })
       // Existing installs get the reported stage progress once.
       .upgrade((tx) => tx.table("stageState").bulkPut(initialStageStates(Date.now())));
+    // 2026-11-24: Stephane chose to restart every project from zero.
+    // Existing installs are reset once; fresh installs already start empty.
+    this.version(4)
+      .stores({})
+      .upgrade(async (tx) => {
+        const now = Date.now();
+        await tx.table("stageState").clear();
+        await tx.table("lessonRuns").clear();
+        await tx.table("projectState").clear();
+        await tx.table("projectState").bulkAdd(initialProjectStates(now));
+        await tx.table("meta").put({ key: "resetAt", value: now });
+      });
     // Runs once, the first time the database is created on this device.
     this.on("populate", (tx) => {
       const now = Date.now();
@@ -83,26 +95,32 @@ export function initialProjectStates(now: number): ProjectState[] {
 }
 
 /**
- * Stage progress Stephane reported in the brief: P1 completed (all 12 stages);
- * P5 phases 1–3 done, phase 4 in progress with step 4.1 (one arrow) done.
+ * Stage progress to start with. Empty: on 2026-11-24 Stephane chose to restart
+ * all projects from zero (this used to hold the progress reported in the brief).
  */
-export function initialStageStates(now: number): StageState[] {
-  const s = (projectId: string, stageId: string, status: StageState["status"]): StageState => ({
-    key: `${projectId}:${stageId}`,
-    projectId,
-    stageId,
-    status,
-    statusSource: "user-reported",
-    updatedAt: now,
-  });
-  return [
-    ...Array.from({ length: 12 }, (_, i) => s("p1-slingshot", String(i + 1), "done")),
-    s("p5-em-field", "1", "done"),
-    s("p5-em-field", "2", "done"),
-    s("p5-em-field", "3", "done"),
-    s("p5-em-field", "4", "in-progress"),
-    s("p5-em-field", "4.1", "done"),
-  ];
+export function initialStageStates(_now: number): StageState[] {
+  return [];
+}
+
+/**
+ * Erase all progress on this device: project and stage status, lesson history.
+ * Keeps nothing except the record of when the reset happened.
+ */
+export async function resetAll(target: AcademyDB): Promise<void> {
+  const now = Date.now();
+  await target.transaction(
+    "rw",
+    [target.projectState, target.stageState, target.lessonRuns, target.meta],
+    async () => {
+      await Promise.all([
+        target.projectState.clear(),
+        target.stageState.clear(),
+        target.lessonRuns.clear(),
+      ]);
+      await target.projectState.bulkAdd(initialProjectStates(now));
+      await target.meta.put({ key: "resetAt", value: now });
+    },
+  );
 }
 
 export const db = new AcademyDB();

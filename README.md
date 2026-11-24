@@ -54,12 +54,17 @@ scripts/
 
 - [x] M0 Shell: navigation, design system, local data, offline install, voice check
 - [x] M1 One complete audio-visual lesson
-- [ ] M2 Project Library with verbatim specs (in review)
+- [x] M2 Project Library with verbatim specs
 - [ ] M3 Dashboard, progress with evidence, notes, backups
 - [ ] M4 Experiment Lab
 - [ ] M5 Exercises and spaced review
 - [ ] M6 Knowledge Library
 - [ ] M7+ Lesson content per project
+
+## Progress history
+
+- 2026-11-24: at Stephane's request, all progress was reset to zero (P1 and P5 included).
+  The System page has a **Reset everything** button for future resets.
 
 ## Rules this codebase follows
 

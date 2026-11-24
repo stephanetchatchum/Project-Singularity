@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AcademyDB } from "./db";
+import { AcademyDB, resetAll } from "./db";
 import { PROJECTS } from "./projects";
 import { SPEC_ISSUES } from "./specIssues";
 
@@ -21,46 +21,37 @@ describe("project catalogue", () => {
 });
 
 describe("first-run database", () => {
-  it("seeds the brief's initial status table, all marked as user-reported", async () => {
+  it("starts every project at zero (reset requested 2026-11-24)", async () => {
     const db = new AcademyDB(`test-${Math.random()}`);
     const states = await db.projectState.toArray();
-    const byNumber = Object.fromEntries(
-      states.map((s) => [PROJECTS.find((p) => p.id === s.id)!.number, s.status]),
-    );
-    expect(byNumber).toEqual({
-      1: "completed",
-      2: "planned",
-      3: "planned",
-      4: "planned",
-      5: "in-progress",
-      6: "planned",
-      7: "planned",
-      8: "planned",
-    });
-    expect(states.every((s) => s.statusSource === "user-reported")).toBe(true);
+    expect(states).toHaveLength(8);
+    expect(states.every((s) => s.status === "planned")).toBe(true);
+    expect(states.every((s) => s.note === undefined)).toBe(true);
+    expect(await db.stageState.count()).toBe(0);
+    expect(await db.lessonRuns.count()).toBe(0);
     await db.delete();
   });
 });
 
-describe("stage progress seed", () => {
-  it("records only what Stephane reported, nothing more", async () => {
+describe("reset button", () => {
+  it("erases all progress and keeps the eight projects", async () => {
     const db = new AcademyDB(`test-${Math.random()}`);
-    const rows = await db.stageState.toArray();
-    const p1 = rows.filter((r) => r.projectId === "p1-slingshot");
-    expect(p1).toHaveLength(12);
-    expect(p1.every((r) => r.status === "done")).toBe(true);
-    const p5 = Object.fromEntries(
-      rows.filter((r) => r.projectId === "p5-em-field").map((r) => [r.stageId, r.status]),
-    );
-    expect(p5).toEqual({
-      "1": "done",
-      "2": "done",
-      "3": "done",
-      "4": "in-progress",
-      "4.1": "done",
+    await db.projectState.update("p1-slingshot", { status: "completed" });
+    await db.stageState.add({
+      key: "p2-black-hole:1",
+      projectId: "p2-black-hole",
+      stageId: "1",
+      status: "done",
+      statusSource: "verified",
+      updatedAt: 1,
     });
-    expect(rows.every((r) => r.statusSource === "user-reported")).toBe(true);
-    expect(rows.some((r) => !["p1-slingshot", "p5-em-field"].includes(r.projectId))).toBe(false);
+    await db.lessonRuns.add({ lessonId: "x", finishedAt: 1, narrator: "x", tasks: [] });
+    await resetAll(db);
+    expect((await db.projectState.toArray()).every((s) => s.status === "planned")).toBe(true);
+    expect(await db.projectState.count()).toBe(8);
+    expect(await db.stageState.count()).toBe(0);
+    expect(await db.lessonRuns.count()).toBe(0);
+    expect(await db.meta.get("resetAt")).toBeDefined();
     await db.delete();
   });
 });
@@ -87,26 +78,26 @@ describe("spec issues", () => {
   });
 });
 
-describe("upgrade from the M1 database", () => {
-  it("adds the reported stage progress for existing installs", async () => {
+describe("upgrade from an older database", () => {
+  it("resets existing installs to zero once", async () => {
     const { default: Dexie } = await import("dexie");
     const name = `upgrade-${Math.random()}`;
     const old = new Dexie(name);
-    old
-      .version(2)
-      .stores({
-        projectState: "id, status",
-        meta: "key",
-        lessonRuns: "++id, lessonId, finishedAt",
-      });
-    await old
-      .table("lessonRuns")
-      .add({ lessonId: "p2-light-flat-space", finishedAt: 1, narrator: "x", tasks: [] });
+    old.version(3).stores({
+      projectState: "id, status",
+      meta: "key",
+      lessonRuns: "++id, lessonId, finishedAt",
+      stageState: "key, projectId",
+    });
+    await old.table("projectState").put({ id: "p1-slingshot", status: "completed" });
+    await old.table("stageState").put({ key: "p5-em-field:4.1", projectId: "p5-em-field" });
+    await old.table("lessonRuns").add({ lessonId: "p2-light-flat-space", finishedAt: 1 });
     old.close();
 
     const db = new AcademyDB(name);
-    expect(await db.stageState.count()).toBe(17);
-    expect(await db.lessonRuns.count()).toBe(1); // nothing lost
+    expect((await db.projectState.toArray()).every((s) => s.status === "planned")).toBe(true);
+    expect(await db.stageState.count()).toBe(0);
+    expect(await db.lessonRuns.count()).toBe(0);
     await db.delete();
   });
 });
