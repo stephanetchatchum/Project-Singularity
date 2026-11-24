@@ -696,3 +696,18 @@ details[open] > summary .chev {
     gap: 0;
   }
 }
+
+/* Reset */
+button.danger {
+  background: rgba(255, 122, 122, 0.14);
+  border-color: rgba(255, 122, 122, 0.5);
+  color: var(--danger);
+}
+button.danger:hover {
+  background: rgba(255, 122, 122, 0.22);
+}
+.reset-confirm {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 122, 122, 0.35);
+}
